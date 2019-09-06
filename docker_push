@@ -1,4 +1,4 @@
 #!/bin/bash
 echo "$ALIYUN_DOCKER_PASSWORD" | docker login -u "$ALIYUN_DOCKER_USERNAME" --password-stdin registry.cn-hangzhou.aliyuncs.com
-docker tag kastnerorz/shu-online-judge:$TRAVIS_TAG registry.cn-hangzhou.aliyuncs.com/kastnerorz/shu-online-judge:$TRAVIS_TAG
+docker tag kastnerorz/shu-online-judge:latest registry.cn-hangzhou.aliyuncs.com/kastnerorz/shu-online-judge:$TRAVIS_TAG
 docker push registry.cn-hangzhou.aliyuncs.com/kastnerorz/shu-online-judge:$TRAVIS_TAG
