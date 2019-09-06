@@ -5,10 +5,11 @@ services:
 script:
   - mvn package -Dmaven.test.skip=true dockerfile:build
 deploy:
-  provider: script
-  script: bash docker_push
-  all_branches: true
-  tags: true
+  - on:
+      all_branches: true
+      tags: true
+    provider: script
+    script: bash docker_push
 env:
   global:
     - secure: aaxEb1rudWrqzRDFPh1X5wekj7Uml3WjeEqaMmRcwFxpYziAwmpfcAt7F7n5UiIPPuBSH55GHZCY01+e1tJuY9N6z+6p5BLTUuMwthSrnfMnbenjgcs6PoD3vWEuRBB2H9gb3xfMAQrKpqF7D4N7nJgpLsE4HPC5wm7fCtWMr1hWszHqIqh8mzRq4YdMNKLzSbVOYCyVvE9A7YXnvf2zyFpoDI4GeQ6WHg9ZOBinNgrmdiIXQ8/aUpKyv3oNAGoH2dLWPuAqHodmd0+5fyUy1IIITHvLe4Ql3UcE2nxV1tRkMVI4d4HqjP3mWNFBZtsOJTs4WZesMAz4CtBkExC2RygfVSi8EJRk00ww3fx8juOOYa0CbbO01MfiRAEBPEBejCl4FxWidM8S4wKvEmAfItYPwOq9DBZ8vdKwg7h36z+rO4jqNoLF+qUEskU11LBF2wqy7WZl2Wkx84HyXKkv9kM2W5oS53uRrJ/VLAQYm96oC7NgfNnfeBRZNX23VP7g8yByg8v+FnZMy1GAtJ17JYio5g8qQXS+syZuz9oxWjcVjs0X71LXLJnqUI0CKLHoM3GdW80UOB9ezO8pTAMQal3uFDNQyAFjkPxp92QbYdacZnJVi0Y8pf0R2nc5Fu3g76TmMEwxODLastBYzMgQSu7akv6h2sciAY3+1SKF1Z0=
