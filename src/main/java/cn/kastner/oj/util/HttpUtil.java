@@ -18,7 +18,7 @@ public class HttpUtil {
     private final String token;
 
   @Autowired
-  public HttpUtil(OkHttpClient client, @Value("${judge-server.token}") String token) {
+  public HttpUtil(OkHttpClient client, @Value("${judger.token}") String token) {
     this.client = client;
       this.token = token;
   }

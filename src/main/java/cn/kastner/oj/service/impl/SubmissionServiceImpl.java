@@ -53,7 +53,7 @@ public class SubmissionServiceImpl implements SubmissionService {
   @Autowired
   public SubmissionServiceImpl(
       UserRepository userRepository,
-      @Value("${judge-server.baseURL}") String judgeServerBaseURL,
+      @Value("${judger.url}") String judgeServerBaseURL,
       SubmissionRepository submissionRepository,
       ProblemRepository problemRepository,
       ContestProblemRepository contestProblemRepository,
