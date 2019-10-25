@@ -20,7 +20,7 @@
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover with gz -->
-            <fileNamePattern>/app/logs/backend.%d{yyyy_MM_dd}.log.gz</fileNamePattern>
+            <fileNamePattern>~/logs/backend.%d{yyyy_MM_dd}.log.gz</fileNamePattern>
             <!-- keep 30 days' max -->
             <maxHistory>30</maxHistory>
         </rollingPolicy>
