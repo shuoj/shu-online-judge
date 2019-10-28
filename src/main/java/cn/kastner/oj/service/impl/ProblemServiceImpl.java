@@ -152,6 +152,7 @@ public class ProblemServiceImpl implements ProblemService {
       } catch (FileException e) {
         throw new ProblemException(e);
       }
+      problem.setTestData("testDataDirectory:" + problem.getTestData());
 
       return mapper.entityToDTO(problemRepository.save(problem));
     }
@@ -177,20 +178,21 @@ public class ProblemServiceImpl implements ProblemService {
     for (SampleIO sampleIO : problem.getSampleIOList()) {
       sampleIO.setProblem(problem);
     }
-
-    String prefix = File.separator + "problems" + File.separator + problem.getId() + File.separator;
-    try {
+    if (!problem.getTestData().contains("testDataDirectory")) {
+      String prefix = File.separator + "problems" + File.separator + problem.getId() + File.separator;
+      try {
 //      String relativePath = ;
-      problem.setTestData(fileUploadService.saveFile(problem.getTestData(), prefix));
-    } catch (IOException e) {
-      e.printStackTrace();
-      throw new ProblemException(ProblemException.TEST_DATA_PATH_INVALID);
-    }
+        problem.setTestData(fileUploadService.saveFile(problem.getTestData(), prefix));
+      } catch (IOException e) {
+        e.printStackTrace();
+        throw new ProblemException(ProblemException.TEST_DATA_PATH_INVALID);
+      }
 
-    try {
-      processTestcase(problem, problem.getSpecialJudged());
-    } catch (FileException e) {
-      throw new ProblemException(e);
+      try {
+        processTestcase(problem, problem.getSpecialJudged());
+      } catch (FileException e) {
+        throw new ProblemException(e);
+      }
     }
 
     return mapper.entityToDTO(problemRepository.save(problem));
