@@ -109,6 +109,7 @@ public class ContestServiceImpl implements ContestService {
       throw new ContestException(ContestException.HAVE_SAME_NAME_CONTEST);
     }
     Contest contest = mapper.dtoToEntity(contestDTO);
+    contest.setId(contestDTO.getId());
 
     requirePassword(contest);
 
