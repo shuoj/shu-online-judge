@@ -4,7 +4,10 @@ import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.ListDTO;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.UserGenerationParam;
-import cn.kastner.oj.exception.*;
+import cn.kastner.oj.exception.AppException;
+import cn.kastner.oj.exception.NoSuchItemException;
+import cn.kastner.oj.exception.UserException;
+import cn.kastner.oj.exception.ValidateException;
 import cn.kastner.oj.query.UserQuery;
 import cn.kastner.oj.security.JwtUser;
 import cn.kastner.oj.service.UserService;
@@ -16,9 +19,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.io.File;
-import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/v1/users")
@@ -50,13 +51,13 @@ public class UserRestController {
 
   @PostMapping
   @PreAuthorize("hasRole('ADMIN')")
-  public JwtUser create(User user) throws UserException {
+  public JwtUser create(@RequestBody User user) throws UserException {
     return userService.create(user);
   }
 
   @PutMapping(value = "/{id}")
   @PreAuthorize("hasRole('ADMIN')")
-  public JwtUser update(User user, @PathVariable String id) throws UserException {
+  public JwtUser update(@RequestBody User user, @PathVariable String id) throws UserException {
     user.setId(id);
     return userService.update(user);
   }
@@ -73,7 +74,9 @@ public class UserRestController {
 
   @PostMapping(value = "/generate")
   @PreAuthorize("hasRole('ADMIN')")
-  public PageDTO<JwtUser> generateUsers(@Validated @RequestBody UserGenerationParam param, BindingResult bindingResult) throws AppException {
+  public PageDTO<JwtUser> generateUsers(
+      @Validated @RequestBody UserGenerationParam param, BindingResult bindingResult)
+      throws AppException {
     if (bindingResult.hasErrors()) {
       throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
     }
