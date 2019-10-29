@@ -39,5 +39,7 @@ public class SubmissionDTO implements Serializable {
 
   private String result;
 
+  private String resultDetail;
+
   private Boolean shared;
 }
