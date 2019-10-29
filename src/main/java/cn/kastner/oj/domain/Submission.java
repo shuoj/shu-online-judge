@@ -55,6 +55,9 @@ public class Submission {
   @Enumerated(EnumType.STRING)
   private Result result;
 
+  @Column(columnDefinition = "TEXT")
+  private String resultDetail;
+
   public Submission() {
     this.id = UUID.randomUUID().toString();
     this.createDate = LocalDateTime.now();

@@ -9,4 +9,10 @@ public class JudgeResult {
   private Integer memory;
   private Integer realTime;
   private String message;
+  private Integer totalCount;
+  private Integer passedCount;
+  private Integer wrongAnswerCount;
+  private Integer cpuTimeLimitExceededCount;
+  private Integer timeLimitExceededCount;
+  private Integer memoryLimitExceededCount;
 }

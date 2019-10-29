@@ -193,6 +193,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     submission.setDuration(judgeResult.getRealTime());
     submission.setResult(judgeResult.getResult());
+    submission.setResultDetail(JSON.toJSONString(judgeResult));
     submission.setMemory(judgeResult.getMemory());
     submissionRepository.save(submission);
     ContestProblem contestProblem =
@@ -290,6 +291,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     submission.setDuration(judgeResult.getRealTime());
     submission.setResult(judgeResult.getResult());
+    submission.setResultDetail(JSON.toJSONString(judgeResult));
     submission.setMemory(judgeResult.getMemory());
     return mapper.entityToDTO(submissionRepository.save(submission));
   }
@@ -314,6 +316,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     submission.setDuration(judgeResult.getRealTime());
     submission.setResult(judgeResult.getResult());
+    submission.setResultDetail(JSON.toJSONString(judgeResult));
     submission.setMemory(judgeResult.getMemory());
     if (contestProblem.getFirstSubmission() == null) {
       contestProblem.setFirstSubmission(submission);
@@ -502,7 +505,13 @@ public class SubmissionServiceImpl implements SubmissionService {
     Integer maxMemory = 0;
     Integer maxCPUTime = 0;
     Integer maxRealTime = 0;
+    Integer passedCount = 0;
+    Integer wrongAnswerCount = 0;
+    Integer cpuTimeLimitExceededCount = 0;
+    Integer timeLimitExceededCount = 0;
+    Integer memoryLimitExceededCount = 0;
     result.setResult(Result.ACCEPTED);
+    boolean resultResolved = false;
     for (JudgeResponse res : data) {
       if (res.getCpu_time() > maxCPUTime) {
         maxCPUTime = res.getCpu_time();
@@ -513,18 +522,48 @@ public class SubmissionServiceImpl implements SubmissionService {
       if (res.getReal_time() > maxRealTime) {
         maxRealTime = res.getReal_time();
       }
-      Integer r = res.getResult();
-      if (r == 1 || r == 2 || r == 3 || r == 4 || r == 5) {
-        result.setResult(integerToResult(r));
-        break;
+
+      switch (res.getResult()) {
+        case 0:
+          passedCount++;
+          break;
+        case -1:
+          wrongAnswerCount++;
+          break;
+        case 1:
+          cpuTimeLimitExceededCount++;
+          break;
+        case 2:
+          timeLimitExceededCount++;
+          break;
+        case 3:
+          memoryLimitExceededCount++;
+        default:
       }
-      if (r == -1) {
-        result.setResult(integerToResult(r));
+
+      if (!resultResolved) {
+        Integer r = res.getResult();
+        if (r == 1 || r == 2 || r == 3 || r == 4 || r == 5) {
+          result.setResult(integerToResult(r));
+          resultResolved = true;
+        }
+
+        if (r == -1) {
+          result.setResult(integerToResult(r));
+          resultResolved = true;
+        }
       }
+
     }
     result.setCpuTime(maxCPUTime);
     result.setMemory(maxMemory);
     result.setRealTime(maxRealTime);
+    result.setTotalCount(data.size());
+    result.setPassedCount(passedCount);
+    result.setWrongAnswerCount(wrongAnswerCount);
+    result.setCpuTimeLimitExceededCount(cpuTimeLimitExceededCount);
+    result.setMemoryLimitExceededCount(memoryLimitExceededCount);
+    result.setTimeLimitExceededCount(timeLimitExceededCount);
     return result;
   }
 

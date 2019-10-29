@@ -13,11 +13,11 @@ public class LanguageConfig {
   private static final String[] PYTHON_3_ENV = {
       "PYTHONIOENCODING=UTF-8", "LANG=en_US.UTF-8", "LANGUAGE=en_US:en", "LC_ALL=en_US.UTF-8"
   };
-  private static final Object C_LANG = CLangConfig();
-  private static final Object CPP_LANG = CPPLangConfig();
-  private static final Object JAVA_LANG = JAVALangConfig();
-  private static final Object PYTHON_2_LANG = PYTHON2LangConfig();
-  private static final Object PYTHON_3_LANG = PYTHON3LangConfig();
+  private static final Object C_LANG = cLangConfig();
+  private static final Object CPP_LANG = cppLangConfig();
+  private static final Object JAVA_LANG = javaLangConfig();
+  private static final Object PYTHON_2_LANG = python2LangConfig();
+  private static final Object PYTHON_3_LANG = python3LangConfig();
 
   public static Object getLanguageConfig(Language language) {
     switch (language) {
@@ -26,13 +26,18 @@ public class LanguageConfig {
       case CPP:
         return CPP_LANG;
       case JAVA:
+        return JAVA_LANG;
+      case PYTHON2:
+        return PYTHON_2_LANG;
+      case PYTHON3:
+        return PYTHON_3_LANG;
 
       default:
         return new HashMap<String, String>();
     }
   }
 
-  private static Map<String, Object> CLangConfig() {
+  private static Map<String, Object> cLangConfig() {
     Map<String, Object> map = new HashMap<>();
 
     Map<String, Object> compile =
@@ -50,7 +55,7 @@ public class LanguageConfig {
     return map;
   }
 
-  private static Map<String, Object> CPPLangConfig() {
+  private static Map<String, Object> cppLangConfig() {
     Map<String, Object> map = new HashMap<>();
     Map<String, Object> compile =
         getCompile(
@@ -67,7 +72,7 @@ public class LanguageConfig {
     return map;
   }
 
-  private static Map<String, Object> JAVALangConfig() {
+  private static Map<String, Object> javaLangConfig() {
     Map<String, Object> map = new HashMap<>();
     map.put("name", "java");
 
@@ -89,7 +94,7 @@ public class LanguageConfig {
     return map;
   }
 
-  private static Map<String, Object> PYTHON2LangConfig() {
+  private static Map<String, Object> python2LangConfig() {
     Map<String, Object> map = new HashMap<>();
 
     Map<String, Object> compile =
@@ -110,7 +115,7 @@ public class LanguageConfig {
     return map;
   }
 
-  private static Map<String, Object> PYTHON3LangConfig() {
+  private static Map<String, Object> python3LangConfig() {
     Map<String, Object> map = new HashMap<>();
 
     Map<String, Object> compile =

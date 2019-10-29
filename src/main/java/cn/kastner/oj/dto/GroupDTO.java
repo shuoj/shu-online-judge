@@ -12,6 +12,8 @@ public class GroupDTO {
 
   private String id;
 
+  private String idx;
+
   @NotBlank(message = "组名不能为空")
   private String name;
 
