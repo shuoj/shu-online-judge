@@ -1,15 +1,16 @@
 package cn.kastner.oj.service.impl;
 
-import cn.kastner.oj.domain.Contest;
 import cn.kastner.oj.domain.Group;
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.domain.security.Authority;
 import cn.kastner.oj.domain.security.AuthorityName;
 import cn.kastner.oj.dto.PageDTO;
-import cn.kastner.oj.exception.*;
+import cn.kastner.oj.exception.FileException;
+import cn.kastner.oj.exception.GroupException;
+import cn.kastner.oj.exception.NoSuchItemException;
+import cn.kastner.oj.exception.UserException;
 import cn.kastner.oj.query.UserQuery;
 import cn.kastner.oj.repository.AuthorityRepository;
-import cn.kastner.oj.repository.ContestRepository;
 import cn.kastner.oj.repository.GroupRepository;
 import cn.kastner.oj.repository.UserRepository;
 import cn.kastner.oj.security.JwtUser;
@@ -34,10 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -46,18 +44,15 @@ public class UserServiceImpl implements UserService {
 
   private final AuthorityRepository authorityRepository;
 
-  private final ContestRepository contestRepository;
-
   private final GroupRepository groupRepository;
 
   @Autowired
   public UserServiceImpl(
       UserRepository userRepository,
       AuthorityRepository authorityRepository,
-      ContestRepository contestRepository, GroupRepository groupRepository) {
+      GroupRepository groupRepository) {
     this.userRepository = userRepository;
     this.authorityRepository = authorityRepository;
-    this.contestRepository = contestRepository;
     this.groupRepository = groupRepository;
   }
 
@@ -162,25 +157,71 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public JwtUser update(User user) throws UserException {
+  public JwtUser update(User updateUser) throws UserException {
 
-    String username = user.getUsername();
-    Optional<User> userOptional = userRepository.findUserByUsername(username);
-    if (userOptional.isPresent() && !userOptional.get().getId().equals(user.getId())) {
-      throw new UserException(UserException.USERNAME_REPEAT);
+    User user =
+        userRepository
+            .findById(updateUser.getId())
+            .orElseThrow(() -> new UserException(UserException.NO_SUCH_USER));
+    String username = updateUser.getUsername();
+    if (null != username) {
+      Optional<User> exUser = userRepository.findUserByUsername(username);
+      if (exUser.isPresent() && !exUser.get().getId().equals(updateUser.getId())) {
+        throw new UserException(UserException.USERNAME_REPEAT);
+      }
+      user.setUsername(username);
     }
 
-    String email = user.getEmail();
-    Optional<User> userOptional1 = userRepository.findByEmail(email);
-    if (userOptional1.isPresent() && !userOptional1.get().getEmail().equals(user.getEmail())) {
-      throw new UserException(UserException.EMAIL_REPEAT);
+    String email = updateUser.getEmail();
+    if (null != email) {
+      Optional<User> exUser = userRepository.findByEmail(email);
+      if (exUser.isPresent() && !exUser.get().getEmail().equals(updateUser.getEmail())) {
+        throw new UserException(UserException.EMAIL_REPEAT);
+      }
+      user.setEmail(email);
     }
 
-    List<Authority> authorities = new ArrayList<>();
-    for (Authority authority : user.getAuthorities()) {
-      authorities.add(authorityRepository.findByName(authority.getName()));
+    if (null != updateUser.getEnabled()) {
+      user.setEnabled(updateUser.getEnabled());
     }
-    user.setAuthorities(authorities);
+
+    if (null != updateUser.getName()) {
+      user.setName(updateUser.getName());
+    }
+
+    if (null != updateUser.getAuthorities()) {
+      user.setAuthorities(updateUser.getAuthorities());
+    }
+
+    if (null != updateUser.getPassword()) {
+      BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+      user.setPassword(encoder.encode(updateUser.getPassword()));
+      user.setLastPasswordResetDate(new Date());
+    }
+
+    if (null != updateUser.getFirstname()) {
+      user.setFirstname(updateUser.getFirstname());
+    }
+
+    if (null != updateUser.getLastname()) {
+      user.setLastname(updateUser.getLastname());
+    }
+
+    if (null != updateUser.getSchool()) {
+      user.setSchool(updateUser.getSchool());
+    }
+
+    if (null != updateUser.getSignature()) {
+      user.setSignature(updateUser.getSignature());
+    }
+
+    if (null != updateUser.getAuthorities()) {
+      List<Authority> authorities = new ArrayList<>();
+      for (Authority authority : updateUser.getAuthorities()) {
+        authorities.add(authorityRepository.findByName(authority.getName()));
+      }
+      user.setAuthorities(authorities);
+    }
 
     return JwtUserFactory.create(userRepository.save(user));
   }
@@ -231,7 +272,8 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public PageDTO<JwtUser> generateUser(String groupId, File excel) throws GroupException, FileException {
+  public PageDTO<JwtUser> generateUser(String groupId, File excel)
+      throws GroupException, FileException {
     Group group =
         groupRepository
             .findById(groupId)
