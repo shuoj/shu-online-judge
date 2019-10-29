@@ -18,6 +18,10 @@ public class Group {
   @Id
   @Column(length = 40)
   private String id;
+
+  @Column(updatable = false, unique = true)
+  private Long idx;
+
   @Column(length = 50)
   private String name;
   @ManyToMany(fetch = FetchType.LAZY)

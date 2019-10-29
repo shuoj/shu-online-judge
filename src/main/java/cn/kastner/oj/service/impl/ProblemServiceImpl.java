@@ -1,9 +1,7 @@
 package cn.kastner.oj.service.impl;
 
-import cn.kastner.oj.domain.Problem;
-import cn.kastner.oj.domain.SampleIO;
-import cn.kastner.oj.domain.Tag;
-import cn.kastner.oj.domain.User;
+import cn.kastner.oj.constant.EntityName;
+import cn.kastner.oj.domain.*;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.ProblemDTO;
@@ -12,6 +10,7 @@ import cn.kastner.oj.exception.FileException;
 import cn.kastner.oj.exception.ProblemException;
 import cn.kastner.oj.query.ProblemQuery;
 import cn.kastner.oj.repository.ContestProblemRepository;
+import cn.kastner.oj.repository.IndexSequenceRepository;
 import cn.kastner.oj.repository.ProblemRepository;
 import cn.kastner.oj.repository.TagRepository;
 import cn.kastner.oj.service.FileUploadService;
@@ -43,6 +42,8 @@ public class ProblemServiceImpl implements ProblemService {
 
   private final TagRepository tagRepository;
 
+  private final IndexSequenceRepository indexSequenceRepository;
+
   private final DTOMapper mapper;
 
   private final String uploadDirectory;
@@ -54,12 +55,13 @@ public class ProblemServiceImpl implements ProblemService {
       ContestProblemRepository contestProblemRepository,
       FileUploadService fileUploadService,
       TagRepository tagRepository,
-      DTOMapper mapper) {
+      IndexSequenceRepository indexSequenceRepository, DTOMapper mapper) {
     this.uploadDirectory = uploadDirectory;
     this.problemRepository = problemRepository;
     this.contestProblemRepository = contestProblemRepository;
     this.fileUploadService = fileUploadService;
     this.tagRepository = tagRepository;
+    this.indexSequenceRepository = indexSequenceRepository;
     this.mapper = mapper;
   }
 
@@ -153,8 +155,12 @@ public class ProblemServiceImpl implements ProblemService {
         throw new ProblemException(e);
       }
       problem.setTestData("testDataDirectory:" + problem.getTestData());
-
-      return mapper.entityToDTO(problemRepository.save(problem));
+      IndexSequence sequence = indexSequenceRepository.findByName(EntityName.PROBLEM);
+      problem.setIdx(sequence.getNextIdx());
+      ProblemDTO dto = mapper.entityToDTO(problemRepository.save(problem));
+      sequence.setNextIdx(problem.getIdx() + 1);
+      indexSequenceRepository.save(sequence);
+      return dto;
     }
   }
 

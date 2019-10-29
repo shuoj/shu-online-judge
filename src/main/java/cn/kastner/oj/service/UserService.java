@@ -2,10 +2,7 @@ package cn.kastner.oj.service;
 
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.PageDTO;
-import cn.kastner.oj.exception.ContestException;
-import cn.kastner.oj.exception.FileException;
-import cn.kastner.oj.exception.NoSuchItemException;
-import cn.kastner.oj.exception.UserException;
+import cn.kastner.oj.exception.*;
 import cn.kastner.oj.query.UserQuery;
 import cn.kastner.oj.security.JwtUser;
 
@@ -24,10 +21,10 @@ public interface UserService {
 
   JwtUser update(User user) throws UserException;
 
-  List<JwtUser> delete(List<String> id) throws NoSuchItemException;
+  void delete(List<String> id) throws NoSuchItemException;
 
-  PageDTO<JwtUser> generateContestUser(String id, File excel)
-      throws FileException, ContestException;
+  PageDTO<JwtUser> generateUser(String groupId, Long quantity) throws GroupException;
 
-  PageDTO<JwtUser> generateUser(File excel) throws FileException;
+  PageDTO<JwtUser> generateUser(String groupId, File excel) throws GroupException, FileException;
+
 }
