@@ -196,6 +196,7 @@ public class User {
     this.password = password;
     this.firstname = firstname;
     this.lastname = lastname;
+    this.name = firstname + lastname;
     this.studentNumber = studentNumber;
     this.email = email;
     this.school = school;

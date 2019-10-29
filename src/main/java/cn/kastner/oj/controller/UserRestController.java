@@ -3,16 +3,21 @@ package cn.kastner.oj.controller;
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.ListDTO;
 import cn.kastner.oj.dto.PageDTO;
-import cn.kastner.oj.exception.NoSuchItemException;
-import cn.kastner.oj.exception.UserException;
+import cn.kastner.oj.dto.UserGenerationParam;
+import cn.kastner.oj.exception.*;
 import cn.kastner.oj.query.UserQuery;
 import cn.kastner.oj.security.JwtUser;
 import cn.kastner.oj.service.UserService;
+import cn.kastner.oj.util.NetResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import java.io.File;
 import java.util.List;
 
 @RestController
@@ -58,8 +63,27 @@ public class UserRestController {
 
   @DeleteMapping
   @PreAuthorize("hasRole('ADMIN')")
-  public List<JwtUser> delete(@RequestBody ListDTO<String> idList) throws NoSuchItemException {
-    return userService.delete(idList.getList());
+  public NetResult delete(@RequestBody ListDTO<String> idList) throws NoSuchItemException {
+    userService.delete(idList.getList());
+    NetResult r = new NetResult();
+    r.code = 200;
+    r.message = "删除成功";
+    return r;
+  }
+
+  @PostMapping(value = "/generate")
+  @PreAuthorize("hasRole('ADMIN')")
+  public PageDTO<JwtUser> generateUsers(@Validated @RequestBody UserGenerationParam param, BindingResult bindingResult) throws AppException {
+    if (bindingResult.hasErrors()) {
+      throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
+    }
+    if (null != param.getFileToken()) {
+      return userService.generateUser(param.getGroupId(), new File(param.getFileToken()));
+    } else if (null != param.getQuantity()) {
+      return userService.generateUser(param.getGroupId(), param.getQuantity());
+    } else {
+      throw new ValidateException("必须提供生成用户的文件或数量");
+    }
   }
 
   @GetMapping(value = "/ranking")

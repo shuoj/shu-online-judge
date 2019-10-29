@@ -1,11 +1,14 @@
 package cn.kastner.oj.service.impl;
 
+import cn.kastner.oj.constant.EntityName;
 import cn.kastner.oj.domain.Group;
+import cn.kastner.oj.domain.IndexSequence;
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.GroupDTO;
 import cn.kastner.oj.exception.GroupException;
 import cn.kastner.oj.exception.UserException;
 import cn.kastner.oj.repository.GroupRepository;
+import cn.kastner.oj.repository.IndexSequenceRepository;
 import cn.kastner.oj.repository.UserRepository;
 import cn.kastner.oj.security.JwtUser;
 import cn.kastner.oj.security.JwtUserFactory;
@@ -29,12 +32,15 @@ public class GroupServiceImpl implements GroupService {
 
   private final UserRepository userRepository;
 
+  private final IndexSequenceRepository indexSequenceRepository;
+
   @Autowired
   public GroupServiceImpl(
-      GroupRepository groupRepository, DTOMapper mapper, UserRepository userRepository) {
+      GroupRepository groupRepository, DTOMapper mapper, UserRepository userRepository, IndexSequenceRepository indexSequenceRepository) {
     this.groupRepository = groupRepository;
     this.mapper = mapper;
     this.userRepository = userRepository;
+    this.indexSequenceRepository = indexSequenceRepository;
   }
 
   @Override
@@ -67,14 +73,19 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
-  public GroupDTO create(GroupDTO groupDTO) throws GroupException {
-    Optional<Group> groupOptional = groupRepository.findByName(groupDTO.getName());
+  public GroupDTO create(GroupDTO in) throws GroupException {
+    Optional<Group> groupOptional = groupRepository.findByName(in.getName());
     if (groupOptional.isPresent()) {
       throw new GroupException(GroupException.HAVE_SUCH_GROUP);
     }
-    Group group = mapper.dtoToEntity(groupDTO);
+    Group group = mapper.dtoToEntity(in);
     group.setCreateDate(LocalDateTime.now());
-    return mapper.entityToDTO(groupRepository.save(group));
+    IndexSequence sequence = indexSequenceRepository.findByName(EntityName.GROUP);
+    group.setIdx(sequence.getNextIdx());
+    GroupDTO dto =  mapper.entityToDTO(groupRepository.save(group));
+    sequence.setNextIdx(group.getIdx() + 1);
+    indexSequenceRepository.save(sequence);
+    return dto;
   }
 
   @Override
