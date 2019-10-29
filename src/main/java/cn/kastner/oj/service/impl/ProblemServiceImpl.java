@@ -222,7 +222,7 @@ public class ProblemServiceImpl implements ProblemService {
       if (tagOptional.isPresent()) {
         Tag tag = tagOptional.get();
         tag.setProblemCount(tag.getProblemCount() + 1);
-        tagList.add(tagOptional.get());
+        tagList.add(tag);
       } else {
         Tag newTag = new Tag();
         newTag.setName(t.getName());
