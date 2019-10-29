@@ -67,7 +67,7 @@ public class ProblemServiceImpl implements ProblemService {
 
   @Override
   public List<ProblemDTO> findProblemNoCriteria(Integer page, Integer size) {
-    Pageable pageable = PageRequest.of(page, size, Sort.Direction.ASC, "id");
+    Pageable pageable = PageRequest.of(page, size, Sort.Direction.ASC, "idx");
     List<Problem> problemList = problemRepository.findAll(pageable).getContent();
     return mapper.toProblemDTOs(problemList);
   }
@@ -76,7 +76,7 @@ public class ProblemServiceImpl implements ProblemService {
   public PageDTO<ProblemDTO> findProblemCriteria(
       Integer page, Integer size, ProblemQuery problemQuery) {
     User user = UserContext.getCurrentUser();
-    Pageable pageable = PageRequest.of(page, size, Sort.Direction.ASC, "id");
+    Pageable pageable = PageRequest.of(page, size, Sort.Direction.ASC, "idx");
     Specification<Problem> ps =
         (root, criteriaQuery, criteriaBuilder) -> {
           List<Predicate> predicateList = new ArrayList<>();
