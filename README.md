@@ -8,6 +8,6 @@
 ## API Reference
 [Wiki](https://github.com/shuoj/shu-online-judge/wiki)
 
-## Depoly
+## Deploy
 
 Please see [shuoj/deploy](https://github.com/shuoj/deploy).
