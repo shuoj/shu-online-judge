@@ -4,7 +4,9 @@ import cn.kastner.oj.constant.EntityName;
 import cn.kastner.oj.domain.Group;
 import cn.kastner.oj.domain.IndexSequence;
 import cn.kastner.oj.domain.User;
+import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.GroupDTO;
+import cn.kastner.oj.exception.AuthorizationException;
 import cn.kastner.oj.exception.GroupException;
 import cn.kastner.oj.exception.UserException;
 import cn.kastner.oj.repository.GroupRepository;
@@ -79,6 +81,8 @@ public class GroupServiceImpl implements GroupService {
       throw new GroupException(GroupException.HAVE_SUCH_GROUP);
     }
     Group group = mapper.dtoToEntity(in);
+    User user = UserContext.getCurrentUser();
+    group.setAuthor(user);
     group.setCreateDate(LocalDateTime.now());
     IndexSequence sequence = indexSequenceRepository.findByName(EntityName.GROUP);
     group.setIdx(sequence.getNextIdx());
@@ -89,11 +93,14 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
-  public GroupDTO update(GroupDTO groupDTO) throws GroupException {
+  public GroupDTO update(GroupDTO groupDTO) throws GroupException, AuthorizationException {
     Group group =
         groupRepository
             .findById(groupDTO.getId())
             .orElseThrow(() -> new GroupException(GroupException.NO_SUCH_GROUP));
+
+    authorize(group);
+
     Optional<Group> existGroupOptional = groupRepository.findByName(groupDTO.getName());
     if (existGroupOptional.isPresent()
         && !existGroupOptional.get().getId().equals(groupDTO.getId())) {
@@ -107,11 +114,14 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
-  public GroupDTO delete(String id) throws GroupException {
+  public GroupDTO delete(String id) throws GroupException, AuthorizationException {
     Group group =
         groupRepository
             .findById(id)
             .orElseThrow(() -> new GroupException(GroupException.NO_SUCH_GROUP));
+
+    authorize(group);
+
     GroupDTO groupDTO = mapper.entityToDTO(group);
     groupRepository.delete(group);
     return groupDTO;
@@ -128,11 +138,13 @@ public class GroupServiceImpl implements GroupService {
 
   @Override
   public List<JwtUser> addMembers(String id, List<String> usersId)
-      throws UserException, GroupException {
+      throws UserException, GroupException, AuthorizationException {
     Group group =
         groupRepository
             .findById(id)
             .orElseThrow(() -> new GroupException(GroupException.NO_SUCH_GROUP));
+
+    authorize(group);
 
     Set<User> userSet = group.getUserSet();
     for (String userId : usersId) {
@@ -149,12 +161,14 @@ public class GroupServiceImpl implements GroupService {
 
   @Override
   public List<JwtUser> deleteMembers(String id, List<String> usersId)
-      throws GroupException, UserException {
+      throws GroupException, UserException, AuthorizationException {
     Group group =
         groupRepository
             .findById(id)
             .orElseThrow(() -> new GroupException(GroupException.NO_SUCH_GROUP));
     Set<User> userSet = group.getUserSet();
+
+    authorize(group);
 
     for (String userId : usersId) {
       User user =
@@ -166,5 +180,12 @@ public class GroupServiceImpl implements GroupService {
     group.setUserSet(userSet);
     groupRepository.save(group);
     return JwtUserFactory.createList(userSet);
+  }
+
+  private void authorize(Group group) throws AuthorizationException {
+    User user = UserContext.getCurrentUser();
+    if (!user.isAdmin() && !user.equals(group.getAuthor())) {
+      throw new AuthorizationException(AuthorizationException.NOT_GROUP_OWNER);
+    }
   }
 }

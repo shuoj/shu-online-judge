@@ -35,7 +35,6 @@ public class UserRestController {
   }
 
   @GetMapping
-  @PreAuthorize("hasRole('ADMIN')")
   public PageDTO<JwtUser> getUser(
       @RequestParam(defaultValue = "0") Integer page,
       @RequestParam(defaultValue = "10") Integer size,
@@ -44,26 +43,25 @@ public class UserRestController {
   }
 
   @GetMapping(value = "/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
   public JwtUser getOne(@PathVariable String id) throws UserException {
     return userService.getOne(id);
   }
 
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public JwtUser create(@RequestBody User user) throws UserException {
     return userService.create(user);
   }
 
   @PutMapping(value = "/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public JwtUser update(@RequestBody User user, @PathVariable String id) throws UserException {
     user.setId(id);
     return userService.update(user);
   }
 
   @DeleteMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public NetResult delete(@RequestBody ListDTO<String> idList) throws NoSuchItemException {
     userService.delete(idList.getList());
     NetResult r = new NetResult();
@@ -73,7 +71,7 @@ public class UserRestController {
   }
 
   @PostMapping(value = "/generate")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public PageDTO<JwtUser> generateUsers(
       @Validated @RequestBody UserGenerationParam param, BindingResult bindingResult)
       throws AppException {

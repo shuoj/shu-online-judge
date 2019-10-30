@@ -2,6 +2,7 @@ package cn.kastner.oj.domain;
 
 import cn.kastner.oj.domain.log.AuthLog;
 import cn.kastner.oj.domain.security.Authority;
+import cn.kastner.oj.domain.security.AuthorityName;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
@@ -107,6 +108,11 @@ public class User {
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
   private List<Announcement> announcementList;
+
+  @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
+  @Fetch(FetchMode.SUBSELECT)
+  @JsonIgnore
+  private List<Group> createGroupList;
 
   @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
@@ -215,6 +221,15 @@ public class User {
     this.acRate = 0.0;
     this.enabled = true;
     this.lastPasswordResetDate = new Date();
+  }
+
+  public boolean isAdmin() {
+    for (Authority authority : authorities) {
+      if (AuthorityName.ROLE_ADMIN.equals(authority.getName())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

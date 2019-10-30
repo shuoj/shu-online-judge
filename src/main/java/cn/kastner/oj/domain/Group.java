@@ -24,6 +24,11 @@ public class Group {
 
   @Column(length = 50)
   private String name;
+
+  @Fetch(FetchMode.JOIN)
+  @ManyToOne(fetch = FetchType.EAGER)
+  private User author;
+
   @ManyToMany(fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JoinTable(
