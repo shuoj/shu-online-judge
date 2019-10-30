@@ -53,7 +53,7 @@ public class AnnouncementRestController {
    *                               <p>return 返回创建成功的公告{ "id": "authorId": "authorName": "title": "content": "modifiedDate": }
    */
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public AnnouncementDTO createAnnouncementDTO(
       @Validated @RequestBody AnnouncementDTO announcementDTO, BindingResult bindingResult)
       throws NoSuchItemException, ValidateException, HaveSuchItemException {
@@ -75,7 +75,7 @@ public class AnnouncementRestController {
    * @throws HaveSuchItemException
    */
   @PutMapping(value = "/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public AnnouncementDTO updateAnnouncement(
       @Validated @RequestBody AnnouncementDTO announcementDTO,
       BindingResult bindingResult,
@@ -96,7 +96,7 @@ public class AnnouncementRestController {
    * @throws NoSuchItemException
    */
   @DeleteMapping(value = "/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public AnnouncementDTO delete(@PathVariable String id) throws NoSuchItemException {
     return announcementService.delete(id);
   }

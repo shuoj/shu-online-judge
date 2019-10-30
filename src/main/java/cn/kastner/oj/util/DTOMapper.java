@@ -83,6 +83,8 @@ public interface DTOMapper {
   @Mapping(target = "id", ignore = true)
   Announcement dtoToEntity(AnnouncementDTO announcementDTO);
 
+  @Mapping(target = "authorName", source = "author.username")
+  @Mapping(target = "authorId", source = "author.id")
   GroupDTO entityToDTO(Group group);
 
   @InheritInverseConfiguration

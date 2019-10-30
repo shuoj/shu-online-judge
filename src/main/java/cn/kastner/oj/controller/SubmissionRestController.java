@@ -91,7 +91,7 @@ public class SubmissionRestController {
   }
 
   @PutMapping(value = "/submissions/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public SubmissionDTO rejudgeSubmissions(@PathVariable String id) throws AppException {
     return submissionService.rejudgeSubmission(id);
   }
