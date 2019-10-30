@@ -1,5 +1,6 @@
 package cn.kastner.oj.dto;
 
+import cn.kastner.oj.domain.SampleIO;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
@@ -47,7 +48,9 @@ public class ProblemDTO {
   private String outputDesc;
 
   @NotNull(message = "样例不能为空")
-  private List<SampleIODTO> sampleIOList;
+  private List<SampleIO> sampleIOList;
+
+  private String sampleIO;
 
   private Boolean specialJudged;
 

@@ -10,6 +10,8 @@ public class ProblemException extends AppException {
 
   public static final String HAVE_SUCH_TITLE_PROBLEM = "已经有相同标题的题目了"; // code -4
 
+  public static final String SAMPLE_IO_INVALID = "测试样例无效";
+
   public static final String DID_NOT_PASS = "该题目未通过";
 
   public static final String PROBLEM_REFERENCED = "题目被引用不能删除";
@@ -36,6 +38,10 @@ public class ProblemException extends AppException {
       case PROBLEM_REFERENCED:
         this.code = -6;
         this.status = HttpStatus.UNPROCESSABLE_ENTITY;
+        break;
+      case SAMPLE_IO_INVALID:
+        this.code = -7;
+        this.status = HttpStatus.BAD_REQUEST;
         break;
       default:
         this.code = -1;

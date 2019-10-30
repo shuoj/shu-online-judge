@@ -17,6 +17,7 @@ import cn.kastner.oj.service.FileUploadService;
 import cn.kastner.oj.service.ProblemService;
 import cn.kastner.oj.util.CommonUtil;
 import cn.kastner.oj.util.DTOMapper;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -134,11 +135,12 @@ public class ProblemServiceImpl implements ProblemService {
     } else {
       problem = mapper.dtoToEntity(problemDTO);
       problem.setAuthor(user);
-      problem.setTagList(validateTagList(problem));
+      problem.setTagList(correctTagList(problem));
 
-      for (SampleIO sampleIO : problem.getSampleIOList()) {
-        sampleIO.setProblem(problem);
+      if (!validateSampleIO(problemDTO.getSampleIOList())) {
+        throw new ProblemException(ProblemException.SAMPLE_IO_INVALID);
       }
+      problem.setSampleIO(JSON.toJSONString(problemDTO.getSampleIOList()));
 
       String prefix =
           File.separator + "problems" + File.separator + problem.getId() + File.separator;
@@ -179,11 +181,13 @@ public class ProblemServiceImpl implements ProblemService {
     problem.setId(id);
     problem.setAuthor(user);
 
-    problem.setTagList(validateTagList(problem));
+    problem.setTagList(correctTagList(problem));
 
-    for (SampleIO sampleIO : problem.getSampleIOList()) {
-      sampleIO.setProblem(problem);
+    if (!validateSampleIO(problemDTO.getSampleIOList())) {
+      throw new ProblemException(ProblemException.SAMPLE_IO_INVALID);
     }
+    problem.setSampleIO(JSON.toJSONString(problemDTO.getSampleIOList()));
+
     if (!problem.getTestData().contains("testDataDirectory")) {
       String prefix = File.separator + "problems" + File.separator + problem.getId() + File.separator;
       try {
@@ -215,7 +219,7 @@ public class ProblemServiceImpl implements ProblemService {
     return mapper.entityToDTO(problem);
   }
 
-  private List<Tag> validateTagList(Problem problem) {
+  private List<Tag> correctTagList(Problem problem) {
     List<Tag> tagList = new ArrayList<>();
     for (Tag t : problem.getTagList()) {
       Optional<Tag> tagOptional = tagRepository.findByName(t.getName());
@@ -231,6 +235,15 @@ public class ProblemServiceImpl implements ProblemService {
       }
     }
     return tagList;
+  }
+
+  private boolean validateSampleIO(List<SampleIO> sampleIOList) {
+    for (SampleIO sampleIO : sampleIOList) {
+      if (CommonUtil.isNull(sampleIO.getInput()) || CommonUtil.isNull(sampleIO.getOutput())) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private void processTestcase(Problem problem, Boolean specialJudge) throws FileException {

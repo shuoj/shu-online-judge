@@ -59,12 +59,7 @@ public class Problem {
   @Column(columnDefinition = "TEXT")
   private String outputDesc;
 
-  @Fetch(FetchMode.SELECT)
-  @OneToMany(
-      mappedBy = "problem",
-      fetch = FetchType.EAGER,
-      cascade = {CascadeType.ALL})
-  private List<SampleIO> sampleIOList;
+  private String sampleIO;
 
   @OneToMany(mappedBy = "problem")
   @JsonIgnore
