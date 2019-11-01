@@ -67,7 +67,9 @@ public class AuthenticationRestController {
   @PostMapping(value = "/api/v1/auth")
   public ResponseEntity<?> createAuthenticationToken(
       @RequestBody JwtAuthenticationRequest authenticationRequest) throws AuthenticationException {
-    final String token = authenticationService.login(authenticationRequest.getUsername(), authenticationRequest.getPassword());
+    final String token =
+        authenticationService.login(
+            authenticationRequest.getUsername(), authenticationRequest.getPassword());
     // Return the token
     return ResponseEntity.ok(new JwtAuthenticationResponse(token));
   }
@@ -120,15 +122,6 @@ public class AuthenticationRestController {
   public JwtUser changePassword(@RequestParam String password) {
     return JwtUserFactory.create(authenticationService.forgotPassword(password));
   }
-
-  //    @RequestMapping(value = "/api/v1/addAdmin")
-  //    public JwtUser addAdmin() throws RegisterException {
-  //        Authority authority = authorityRepository.findByName(AuthorityName.ROLE_ADMIN);
-  //        List<Authority> authorityList = new ArrayList<>();
-  //        authorityList.add(authority);
-  //        User admin = new User("kastnerorz", "lightning", "kastnerorz@gmail.com", authorityList);
-  //        return JwtUserFactory.create(authenticationService.register(admin));
-  //    }
 
   /**
    * Authenticates the user. If something is wrong, an {@link AuthenticationException} will be

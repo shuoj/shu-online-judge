@@ -1,7 +1,10 @@
 package cn.kastner.oj.controller;
 
-import cn.kastner.oj.exception.*;
+import cn.kastner.oj.exception.AppException;
 import cn.kastner.oj.util.ErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,23 +15,17 @@ import javax.servlet.http.HttpServletRequest;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-  @ExceptionHandler(
-      value = {
-          NoSuchItemException.class,
-          ValidateException.class,
-          HaveSuchItemException.class,
-          NoSuchItemException.class,
-          AuthorizationException.class,
-          ItemReferencedException.class,
-          RequestException.class
-      })
+  private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+  @ExceptionHandler(value = {Exception.class})
   @ResponseBody
-  public ErrorResponse generalErrorHandler(HttpServletRequest req, Exception e) {
+  public ResponseEntity<ErrorResponse> generalErrorHandler(HttpServletRequest req, Exception e) {
+    logger.error("Uncaught Exception", e);
     ErrorResponse r = new ErrorResponse();
-    r.setMessage(e.getMessage());
+    r.setMessage("系统错误");
     r.setCode(ErrorResponse.ERROR);
     r.setUrl(req.getRequestURL().toString());
-    return r;
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(r);
   }
 
   @ExceptionHandler(value = {AppException.class})

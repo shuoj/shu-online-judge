@@ -26,7 +26,6 @@ public class ProblemRestController {
    * 获取指定题目
    *
    * @param id 问题id
-   * @throws NoSuchItemException 没有这个问题
    */
   @GetMapping(value = "/{id}")
   public ProblemDTO getProblem(@PathVariable String id) throws AppException {

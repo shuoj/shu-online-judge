@@ -4,8 +4,7 @@ import cn.kastner.oj.domain.Announcement;
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.AnnouncementDTO;
-import cn.kastner.oj.exception.HaveSuchItemException;
-import cn.kastner.oj.exception.NoSuchItemException;
+import cn.kastner.oj.exception.AnnouncementException;
 import cn.kastner.oj.repository.AnnouncementRepository;
 import cn.kastner.oj.service.AnnouncementService;
 import cn.kastner.oj.util.DTOMapper;
@@ -45,56 +44,53 @@ public class AnnouncementServiceImpl implements AnnouncementService {
   }
 
   @Override
-  public AnnouncementDTO findAnnouncementById(String id) throws NoSuchItemException {
-    Optional<Announcement> announcement = announcementRepository.findById(id);
-    if (!announcement.isPresent()) {
-      throw new NoSuchItemException("没有这个公告！");
-    }
-    return mapper.entityToDTO(announcement.get());
+  public AnnouncementDTO findAnnouncementById(String id) throws AnnouncementException {
+    Announcement announcement =
+        announcementRepository
+            .findById(id)
+            .orElseThrow(
+                () -> new AnnouncementException(AnnouncementException.NO_SUCH_ANNOUNCEMENT));
+    return mapper.entityToDTO(announcement);
   }
 
   @Override
-  public AnnouncementDTO create(AnnouncementDTO announcementDTO)
-      throws HaveSuchItemException {
+  public AnnouncementDTO create(AnnouncementDTO announcementDTO) throws AnnouncementException {
     User user = UserContext.getCurrentUser();
     Optional<Announcement> announcementOptional =
         announcementRepository.findByTitle(announcementDTO.getTitle());
     if (announcementOptional.isPresent()) {
-      throw new HaveSuchItemException("已经有相同标题的公告！");
-    } else {
-      Announcement announcement = mapper.dtoToEntity(announcementDTO);
-      announcement.setAuthor(user);
-      announcement.setModifiedDate(LocalDateTime.now());
-      return mapper.entityToDTO(announcementRepository.save(announcement));
+      throw new AnnouncementException(AnnouncementException.HAVE_SUCH_ANNOUNCEMENT);
     }
+    Announcement announcement = mapper.dtoToEntity(announcementDTO);
+    announcement.setAuthor(user);
+    announcement.setModifiedDate(LocalDateTime.now());
+    return mapper.entityToDTO(announcementRepository.save(announcement));
   }
 
   @Override
-  public AnnouncementDTO update(AnnouncementDTO announcementDTO)
-      throws NoSuchItemException, HaveSuchItemException {
+  public AnnouncementDTO update(AnnouncementDTO announcementDTO) throws AnnouncementException {
     User user = UserContext.getCurrentUser();
     Optional<Announcement> announcementOptional =
         announcementRepository.findByTitle(announcementDTO.getTitle());
     if (announcementOptional.isPresent()
         && !announcementOptional.get().getId().equals(announcementDTO.getId())) {
-      throw new HaveSuchItemException("已经有相同标题的公告！");
-    } else {
-      Announcement announcement = mapper.dtoToEntity(announcementDTO);
-      announcement.setAuthor(user);
-      announcement.setModifiedDate(LocalDateTime.now());
-      return mapper.entityToDTO(announcementRepository.save(announcement));
+      throw new AnnouncementException(AnnouncementException.HAVE_SUCH_ANNOUNCEMENT);
     }
+    Announcement announcement = mapper.dtoToEntity(announcementDTO);
+    announcement.setAuthor(user);
+    announcement.setModifiedDate(LocalDateTime.now());
+    return mapper.entityToDTO(announcementRepository.save(announcement));
   }
 
   @Override
-  public AnnouncementDTO delete(String id) throws NoSuchItemException {
-    Optional<Announcement> announcement = announcementRepository.findById(id);
-    if (!announcement.isPresent()) {
-      throw new NoSuchItemException("没有这个公告!");
-    } else {
-      announcementRepository.delete(announcement.get());
-    }
+  public AnnouncementDTO delete(String id) throws AnnouncementException {
+    Announcement announcement =
+        announcementRepository
+            .findById(id)
+            .orElseThrow(
+                () -> new AnnouncementException(AnnouncementException.NO_SUCH_ANNOUNCEMENT));
+    announcementRepository.delete(announcement);
 
-    return mapper.entityToDTO(announcement.get());
+    return mapper.entityToDTO(announcement);
   }
 }

@@ -1,5 +1,6 @@
 package cn.kastner.oj.exception;
 
+import io.sentry.event.Breadcrumb;
 import org.springframework.http.HttpStatus;
 
 public class AuthenticationException extends AppException {
@@ -10,10 +11,12 @@ public class AuthenticationException extends AppException {
 
   public AuthenticationException(String message) {
     super(message);
+    this.category = "auth";
     switch (message) {
       case USER_DISABLED:
         this.code = -2;
         this.status = HttpStatus.UNAUTHORIZED;
+        this.level = Breadcrumb.Level.DEBUG;
         break;
       case BAD_CREDENTIALS:
         this.code = -3;

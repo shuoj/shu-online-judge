@@ -1,8 +1,7 @@
 package cn.kastner.oj.controller;
 
 import cn.kastner.oj.dto.AnnouncementDTO;
-import cn.kastner.oj.exception.HaveSuchItemException;
-import cn.kastner.oj.exception.NoSuchItemException;
+import cn.kastner.oj.exception.AppException;
 import cn.kastner.oj.exception.ValidateException;
 import cn.kastner.oj.service.AnnouncementService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,28 +34,22 @@ public class AnnouncementRestController {
    * 获取指定公告
    *
    * @param id announcementId
-   * @throws NoSuchItemException 没有这个公告
    */
   @GetMapping(value = "/{id}")
-  public AnnouncementDTO getAnnouncement(@PathVariable String id) throws NoSuchItemException {
+  public AnnouncementDTO getAnnouncement(@PathVariable String id) throws AppException {
     return announcementService.findAnnouncementById(id);
   }
 
   /**
    * 创建公告
    *
-   * @throws NoSuchItemException   没有此用户
    * @throws ValidateException     无权限
-   * @throws HaveSuchItemException 已经有相同title的公告了 @Param AnnouncementDTO { "authorId": "title":
-   *                               "content": }
-   *                               <p>
-   *                               <p>return 返回创建成功的公告{ "id": "authorId": "authorName": "title": "content": "modifiedDate": }
    */
   @PostMapping
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public AnnouncementDTO createAnnouncementDTO(
       @Validated @RequestBody AnnouncementDTO announcementDTO, BindingResult bindingResult)
-      throws NoSuchItemException, ValidateException, HaveSuchItemException {
+      throws AppException {
 
     if (bindingResult.hasErrors()) {
       throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
@@ -70,9 +63,7 @@ public class AnnouncementRestController {
    *
    * @param announcementDTO { 和创建公告信息的参数相同 }
    * @param id              return{ 更新后的题目信息 }
-   * @throws NoSuchItemException
    * @throws ValidateException
-   * @throws HaveSuchItemException
    */
   @PutMapping(value = "/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
@@ -80,7 +71,7 @@ public class AnnouncementRestController {
       @Validated @RequestBody AnnouncementDTO announcementDTO,
       BindingResult bindingResult,
       @PathVariable String id)
-      throws NoSuchItemException, ValidateException, HaveSuchItemException {
+      throws AppException {
     if (bindingResult.hasErrors()) {
       throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
     } else {
@@ -93,11 +84,10 @@ public class AnnouncementRestController {
    * 删除指定公告
    *
    * @param id return 删除的题目
-   * @throws NoSuchItemException
    */
   @DeleteMapping(value = "/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public AnnouncementDTO delete(@PathVariable String id) throws NoSuchItemException {
+  public AnnouncementDTO delete(@PathVariable String id) throws AppException {
     return announcementService.delete(id);
   }
 }
