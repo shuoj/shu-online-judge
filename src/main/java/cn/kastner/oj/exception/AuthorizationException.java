@@ -12,6 +12,7 @@ public class AuthorizationException extends AppException {
       case NOT_GROUP_OWNER:
         this.code = -2;
         this.status = HttpStatus.FORBIDDEN;
+        break;
       default:
         this.code = -1;
         this.status = HttpStatus.INTERNAL_SERVER_ERROR;
