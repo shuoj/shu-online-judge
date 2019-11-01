@@ -19,12 +19,10 @@ public class GroupRestController {
 
   private final GroupService groupService;
 
-  private UserRepository userRepository;
 
   @Autowired
-  public GroupRestController(GroupService groupService, UserRepository userRepository) {
+  public GroupRestController(GroupService groupService) {
     this.groupService = groupService;
-    this.userRepository = userRepository;
   }
 
   /**
@@ -55,15 +53,12 @@ public class GroupRestController {
    * @param groupDTO
    * @param bindingResult
    * @return groupDTO
-   * @throws NoSuchItemException
-   * @throws ValidateException
-   * @throws HaveSuchItemException
    */
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public GroupDTO createGroup(
       @Validated @RequestBody GroupDTO groupDTO, BindingResult bindingResult)
-      throws ValidateException, GroupException {
+      throws AppException {
     if (bindingResult.hasErrors()) {
       throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
     } else {
@@ -78,17 +73,14 @@ public class GroupRestController {
    * @param bindingResult
    * @param id
    * @return
-   * @throws NoSuchItemException
-   * @throws ValidateException
-   * @throws HaveSuchItemException
    */
   @PutMapping(value = "/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public GroupDTO updateGroup(
       @Validated @RequestBody GroupDTO groupDTO,
       BindingResult bindingResult,
       @PathVariable String id)
-      throws ValidateException, GroupException {
+      throws AppException {
     if (bindingResult.hasErrors()) {
       throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
     } else {
@@ -106,8 +98,8 @@ public class GroupRestController {
    * @throws NoSuchItemException
    */
   @DeleteMapping(value = "/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
-  public GroupDTO deleteGroup(@PathVariable String id) throws GroupException {
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
+  public GroupDTO deleteGroup(@PathVariable String id) throws AppException {
     return groupService.delete(id);
   }
 
@@ -118,16 +110,14 @@ public class GroupRestController {
    * @param bindingResult
    * @param id
    * @return
-   * @throws ValidateException
-   * @throws NoSuchItemException
    */
   @PostMapping(value = "/{id}/members")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<JwtUser> addMembers(
       @Validated @RequestBody List<String> usersId,
       BindingResult bindingResult,
       @PathVariable String id)
-      throws ValidateException, GroupException, UserException {
+      throws AppException {
     if (bindingResult.hasErrors()) {
       throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
     }
@@ -146,12 +136,12 @@ public class GroupRestController {
    * @throws NoSuchItemException
    */
   @DeleteMapping(value = "/{id}/members")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<JwtUser> deleteMembers(
       @Validated @RequestBody List<String> usersId,
       BindingResult bindingResult,
       @PathVariable String id)
-      throws ValidateException, GroupException, UserException {
+      throws AppException {
     if (bindingResult.hasErrors()) {
       throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
     }

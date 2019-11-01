@@ -22,7 +22,7 @@ public class Contest {
   @Column(length = 40)
   private String id;
 
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(updatable = false, unique = true, nullable = false)
   private Long idx;
 
   @Fetch(FetchMode.JOIN)

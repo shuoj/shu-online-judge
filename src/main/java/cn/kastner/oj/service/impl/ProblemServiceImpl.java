@@ -1,9 +1,7 @@
 package cn.kastner.oj.service.impl;
 
-import cn.kastner.oj.domain.Problem;
-import cn.kastner.oj.domain.SampleIO;
-import cn.kastner.oj.domain.Tag;
-import cn.kastner.oj.domain.User;
+import cn.kastner.oj.constant.EntityName;
+import cn.kastner.oj.domain.*;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.ProblemDTO;
@@ -12,12 +10,14 @@ import cn.kastner.oj.exception.FileException;
 import cn.kastner.oj.exception.ProblemException;
 import cn.kastner.oj.query.ProblemQuery;
 import cn.kastner.oj.repository.ContestProblemRepository;
+import cn.kastner.oj.repository.IndexSequenceRepository;
 import cn.kastner.oj.repository.ProblemRepository;
 import cn.kastner.oj.repository.TagRepository;
 import cn.kastner.oj.service.FileUploadService;
 import cn.kastner.oj.service.ProblemService;
 import cn.kastner.oj.util.CommonUtil;
 import cn.kastner.oj.util.DTOMapper;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +43,8 @@ public class ProblemServiceImpl implements ProblemService {
 
   private final TagRepository tagRepository;
 
+  private final IndexSequenceRepository indexSequenceRepository;
+
   private final DTOMapper mapper;
 
   private final String uploadDirectory;
@@ -54,18 +56,19 @@ public class ProblemServiceImpl implements ProblemService {
       ContestProblemRepository contestProblemRepository,
       FileUploadService fileUploadService,
       TagRepository tagRepository,
-      DTOMapper mapper) {
+      IndexSequenceRepository indexSequenceRepository, DTOMapper mapper) {
     this.uploadDirectory = uploadDirectory;
     this.problemRepository = problemRepository;
     this.contestProblemRepository = contestProblemRepository;
     this.fileUploadService = fileUploadService;
     this.tagRepository = tagRepository;
+    this.indexSequenceRepository = indexSequenceRepository;
     this.mapper = mapper;
   }
 
   @Override
   public List<ProblemDTO> findProblemNoCriteria(Integer page, Integer size) {
-    Pageable pageable = PageRequest.of(page, size, Sort.Direction.ASC, "id");
+    Pageable pageable = PageRequest.of(page, size, Sort.Direction.ASC, "idx");
     List<Problem> problemList = problemRepository.findAll(pageable).getContent();
     return mapper.toProblemDTOs(problemList);
   }
@@ -74,7 +77,7 @@ public class ProblemServiceImpl implements ProblemService {
   public PageDTO<ProblemDTO> findProblemCriteria(
       Integer page, Integer size, ProblemQuery problemQuery) {
     User user = UserContext.getCurrentUser();
-    Pageable pageable = PageRequest.of(page, size, Sort.Direction.ASC, "id");
+    Pageable pageable = PageRequest.of(page, size, Sort.Direction.ASC, "idx");
     Specification<Problem> ps =
         (root, criteriaQuery, criteriaBuilder) -> {
           List<Predicate> predicateList = new ArrayList<>();
@@ -132,11 +135,12 @@ public class ProblemServiceImpl implements ProblemService {
     } else {
       problem = mapper.dtoToEntity(problemDTO);
       problem.setAuthor(user);
-      problem.setTagList(validateTagList(problem));
+      problem.setTagList(correctTagList(problem));
 
-      for (SampleIO sampleIO : problem.getSampleIOList()) {
-        sampleIO.setProblem(problem);
+      if (!validateSampleIO(problemDTO.getSampleIOList())) {
+        throw new ProblemException(ProblemException.SAMPLE_IO_INVALID);
       }
+      problem.setSampleIO(JSON.toJSONString(problemDTO.getSampleIOList()));
 
       String prefix =
           File.separator + "problems" + File.separator + problem.getId() + File.separator;
@@ -152,8 +156,13 @@ public class ProblemServiceImpl implements ProblemService {
       } catch (FileException e) {
         throw new ProblemException(e);
       }
-
-      return mapper.entityToDTO(problemRepository.save(problem));
+      problem.setTestData("testDataDirectory:" + problem.getTestData());
+      IndexSequence sequence = indexSequenceRepository.findByName(EntityName.PROBLEM);
+      problem.setIdx(sequence.getNextIdx());
+      ProblemDTO dto = mapper.entityToDTO(problemRepository.save(problem));
+      sequence.setNextIdx(problem.getIdx() + 1);
+      indexSequenceRepository.save(sequence);
+      return dto;
     }
   }
 
@@ -172,25 +181,28 @@ public class ProblemServiceImpl implements ProblemService {
     problem.setId(id);
     problem.setAuthor(user);
 
-    problem.setTagList(validateTagList(problem));
+    problem.setTagList(correctTagList(problem));
 
-    for (SampleIO sampleIO : problem.getSampleIOList()) {
-      sampleIO.setProblem(problem);
+    if (!validateSampleIO(problemDTO.getSampleIOList())) {
+      throw new ProblemException(ProblemException.SAMPLE_IO_INVALID);
     }
+    problem.setSampleIO(JSON.toJSONString(problemDTO.getSampleIOList()));
 
-    String prefix = File.separator + "problems" + File.separator + problem.getId() + File.separator;
-    try {
+    if (!problem.getTestData().contains("testDataDirectory")) {
+      String prefix = File.separator + "problems" + File.separator + problem.getId() + File.separator;
+      try {
 //      String relativePath = ;
-      problem.setTestData(fileUploadService.saveFile(problem.getTestData(), prefix));
-    } catch (IOException e) {
-      e.printStackTrace();
-      throw new ProblemException(ProblemException.TEST_DATA_PATH_INVALID);
-    }
+        problem.setTestData(fileUploadService.saveFile(problem.getTestData(), prefix));
+      } catch (IOException e) {
+        e.printStackTrace();
+        throw new ProblemException(ProblemException.TEST_DATA_PATH_INVALID);
+      }
 
-    try {
-      processTestcase(problem, problem.getSpecialJudged());
-    } catch (FileException e) {
-      throw new ProblemException(e);
+      try {
+        processTestcase(problem, problem.getSpecialJudged());
+      } catch (FileException e) {
+        throw new ProblemException(e);
+      }
     }
 
     return mapper.entityToDTO(problemRepository.save(problem));
@@ -207,14 +219,14 @@ public class ProblemServiceImpl implements ProblemService {
     return mapper.entityToDTO(problem);
   }
 
-  private List<Tag> validateTagList(Problem problem) {
+  private List<Tag> correctTagList(Problem problem) {
     List<Tag> tagList = new ArrayList<>();
     for (Tag t : problem.getTagList()) {
       Optional<Tag> tagOptional = tagRepository.findByName(t.getName());
       if (tagOptional.isPresent()) {
         Tag tag = tagOptional.get();
         tag.setProblemCount(tag.getProblemCount() + 1);
-        tagList.add(tagOptional.get());
+        tagList.add(tag);
       } else {
         Tag newTag = new Tag();
         newTag.setName(t.getName());
@@ -223,6 +235,15 @@ public class ProblemServiceImpl implements ProblemService {
       }
     }
     return tagList;
+  }
+
+  private boolean validateSampleIO(List<SampleIO> sampleIOList) {
+    for (SampleIO sampleIO : sampleIOList) {
+      if (CommonUtil.isNull(sampleIO.getInput()) || CommonUtil.isNull(sampleIO.getOutput())) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private void processTestcase(Problem problem, Boolean specialJudge) throws FileException {

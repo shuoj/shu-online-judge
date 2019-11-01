@@ -1,5 +1,6 @@
 package cn.kastner.oj.service.impl;
 
+import cn.kastner.oj.constant.EntityName;
 import cn.kastner.oj.domain.*;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.ContestDTO;
@@ -47,6 +48,8 @@ public class ContestServiceImpl implements ContestService {
 
   private final GroupRepository groupRepository;
 
+  private final IndexSequenceRepository indexSequenceRepository;
+
   private final DTOMapper mapper;
 
   @Autowired
@@ -58,7 +61,7 @@ public class ContestServiceImpl implements ContestService {
       ContestProblemRepository contestProblemRepository,
       RankingUserRepository rankingUserRepository,
       GroupRepository groupRepository,
-      DTOMapper mapper) {
+      IndexSequenceRepository indexSequenceRepository, DTOMapper mapper) {
     this.contestRepository = contestRepository;
     this.timeCostRepository = timeCostRepository;
     this.problemRepository = problemRepository;
@@ -66,6 +69,7 @@ public class ContestServiceImpl implements ContestService {
     this.contestProblemRepository = contestProblemRepository;
     this.rankingUserRepository = rankingUserRepository;
     this.groupRepository = groupRepository;
+    this.indexSequenceRepository = indexSequenceRepository;
     this.mapper = mapper;
   }
 
@@ -87,7 +91,12 @@ public class ContestServiceImpl implements ContestService {
     Ranking ranking = new Ranking();
     ranking.setContest(contest);
     contest.setRanking(ranking);
-    return mapper.entityToDTO(contestRepository.save(contest));
+    IndexSequence sequence = indexSequenceRepository.findByName(EntityName.CONTEST);
+    contest.setIdx(sequence.getNextIdx());
+    ContestDTO dto = mapper.entityToDTO(contestRepository.save(contest));
+    sequence.setNextIdx(contest.getIdx() + 1);
+    indexSequenceRepository.save(sequence);
+    return dto;
   }
 
   @Override
@@ -109,6 +118,7 @@ public class ContestServiceImpl implements ContestService {
       throw new ContestException(ContestException.HAVE_SAME_NAME_CONTEST);
     }
     Contest contest = mapper.dtoToEntity(contestDTO);
+    contest.setId(contestDTO.getId());
 
     requirePassword(contest);
 

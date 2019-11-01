@@ -53,7 +53,7 @@ public class ProblemRestController {
    * @throws ValidateException 无权限
    */
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public ProblemDTO createProblem(
       @Validated @RequestBody ProblemDTO problemDTO, BindingResult bindingResult)
       throws AppException {
@@ -75,7 +75,7 @@ public class ProblemRestController {
    * @throws HaveSuchItemException 已经有相同title的题目了
    */
   @PutMapping(value = "/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public ProblemDTO updateProblem(
       @Validated @RequestBody ProblemDTO problemDTO,
       BindingResult bindingResult,
@@ -97,7 +97,7 @@ public class ProblemRestController {
    * @throws NoSuchItemException 没有这个题目
    */
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public ProblemDTO deleteProblem(@PathVariable String id) throws ProblemException {
     return problemService.delete(id);
   }

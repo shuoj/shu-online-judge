@@ -18,8 +18,17 @@ public class Group {
   @Id
   @Column(length = 40)
   private String id;
+
+  @Column(updatable = false, unique = true)
+  private Long idx;
+
   @Column(length = 50)
   private String name;
+
+  @Fetch(FetchMode.JOIN)
+  @ManyToOne(fetch = FetchType.EAGER)
+  private User author;
+
   @ManyToMany(fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JoinTable(

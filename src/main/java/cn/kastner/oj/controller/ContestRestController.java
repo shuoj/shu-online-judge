@@ -59,7 +59,7 @@ public class ContestRestController {
   }
 
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public ContestDTO createContest(
       @Validated @RequestBody ContestDTO contestDTO, BindingResult bindingResult)
       throws AppException {
@@ -71,7 +71,7 @@ public class ContestRestController {
   }
 
   @PutMapping(value = "/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public ContestDTO updateContest(
       @Validated @RequestBody ContestDTO contestDTO,
       BindingResult bindingResult,
@@ -86,7 +86,7 @@ public class ContestRestController {
   }
 
   @PatchMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public ContestDTO partUpdateContest(@PathVariable String id, ContestDTO contestDTO)
       throws AppException {
     contestDTO.setId(id);
@@ -94,7 +94,7 @@ public class ContestRestController {
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public ContestDTO deleteContest(@PathVariable String id) throws AppException {
     return contestService.delete(id);
   }
@@ -105,21 +105,21 @@ public class ContestRestController {
   }
 
   @PostMapping("/{id}/problems")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<ProblemDTO> setProblems(
       @RequestBody List<String> problemIdList, @PathVariable String id) throws AppException {
     return contestService.addProblems(problemIdList, id);
   }
 
   @DeleteMapping("/{id}/problems")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<ProblemDTO> deleteProblems(
       @RequestBody List<String> problemIdList, @PathVariable String id) throws AppException {
     return contestService.deleteProblems(problemIdList, id);
   }
 
   @PostMapping(value = "/{id}/groups")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<JwtUser> addUsersByGroups(
       @RequestBody List<String> groupIdList, @PathVariable String id) throws AppException {
     return contestService.addUsersByGroups(groupIdList, id);
@@ -144,14 +144,14 @@ public class ContestRestController {
   }
 
   @PostMapping("/{id}/users")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<JwtUser> addUsers(@RequestBody List<String> userIdList, @PathVariable String id)
       throws AppException {
     return contestService.addUsers(userIdList, id);
   }
 
   @DeleteMapping("/{id}/users")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<JwtUser> deleteUsers(@RequestBody List<String> userIdList, @PathVariable String id)
       throws AppException {
     return contestService.deleteUsers(userIdList, id);
@@ -163,7 +163,7 @@ public class ContestRestController {
   }
 
   @PatchMapping("/{id}/status")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public ContestDTO setContestStatus(@PathVariable String id, @RequestParam ContestOption option)
       throws AppException {
     return contestService.setContestStatus(id, option);

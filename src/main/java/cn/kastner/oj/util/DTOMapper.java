@@ -61,12 +61,6 @@ public interface DTOMapper {
 
   List<TagDTO> toTagDTOs(List<Tag> tags);
 
-  SampleIODTO entityToDTO(SampleIO sampleIO);
-
-  @InheritInverseConfiguration
-  @Mapping(target = "id", ignore = true)
-  SampleIO dtoToEntity(SampleIODTO sampleIODTO);
-
   @Mapping(target = "authorName", source = "author.username")
   @Mapping(target = "authorId", source = "author.id")
   @Mapping(target = "password", ignore = true)
@@ -89,6 +83,8 @@ public interface DTOMapper {
   @Mapping(target = "id", ignore = true)
   Announcement dtoToEntity(AnnouncementDTO announcementDTO);
 
+  @Mapping(target = "authorName", source = "author.username")
+  @Mapping(target = "authorId", source = "author.id")
   GroupDTO entityToDTO(Group group);
 
   @InheritInverseConfiguration
