@@ -1,11 +1,9 @@
 package cn.kastner.oj.controller;
 
-import cn.kastner.oj.exception.*;
+import cn.kastner.oj.exception.AppException;
 import cn.kastner.oj.util.ErrorResponse;
-import io.sentry.Sentry;
-import io.sentry.event.Breadcrumb;
-import io.sentry.event.BreadcrumbBuilder;
-import org.springframework.beans.factory.annotation.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,23 +14,14 @@ import javax.servlet.http.HttpServletRequest;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-  @Value("${app.version}")
-  private String version;
+  private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-  @ExceptionHandler(
-      value = {
-          NoSuchItemException.class,
-          ValidateException.class,
-          HaveSuchItemException.class,
-          NoSuchItemException.class,
-          AuthorizationException.class,
-          ItemReferencedException.class,
-          RequestException.class
-      })
+  @ExceptionHandler(value = {Exception.class})
   @ResponseBody
   public ErrorResponse generalErrorHandler(HttpServletRequest req, Exception e) {
+    logger.error("Uncaught Exception", e);
     ErrorResponse r = new ErrorResponse();
-    r.setMessage(e.getMessage());
+    r.setMessage("系统错误");
     r.setCode(ErrorResponse.ERROR);
     r.setUrl(req.getRequestURL().toString());
     return r;
@@ -41,8 +30,6 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(value = {AppException.class})
   public ResponseEntity<ErrorResponse> authorizationHandler(
       HttpServletRequest req, AppException e) {
-    Sentry.getContext().addTag("app-version", version);
-    Sentry.getContext().addExtra("message", e.getMessage());
     ErrorResponse r = new ErrorResponse();
     r.setCode(e.getCode());
     r.setMessage(e.getMessage());
