@@ -3,7 +3,7 @@ jdk: openjdk8
 services:
 - docker
 script:
-- mvn package -Dmaven.test.skip=true dockerfile:build
+  - mvn package -Denv.APP_VERSION=$TRAVIS_TAG -Dmaven.test.skip=true dockerfile:build
 deploy:
 - on:
     all_branches: true
