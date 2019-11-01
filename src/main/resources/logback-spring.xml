@@ -2,41 +2,22 @@
 <configuration>
 
     <!-- For console -->
-    <appender name="ConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <charset>UTF-8</charset>
             <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%thread] [%logger] [tr=%mdc{TRACE_ID:-0}] %msg %n</Pattern>
         </encoder>
     </appender>
 
-    <!-- For file with daily rollover -->
-    <appender name="ServerFileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <encoder>
-            <charset>UTF-8</charset>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] [%thread] [%logger] [tr=%X{TRACE_ID:-0}] %msg %n</pattern>
-        </encoder>
-
-        <file>/app/logs/backend.log</file>
-
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- daily rollover with gz -->
-            <fileNamePattern>~/logs/backend.%d{yyyy_MM_dd}.log.gz</fileNamePattern>
-            <!-- keep 30 days' max -->
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
+    <appender name="Sentry" class="io.sentry.logback.SentryAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
     </appender>
 
-    <!-- console only if local active -->
-    <springProfile name="local">
-        <root level="INFO">
-            <appender-ref ref="ConsoleAppender"/>
-        </root>
-    </springProfile>
-    <!-- file only if test or online active -->
-    <springProfile name="test,online">
-        <root level="INFO">
-            <appender-ref ref="ServerFileAppender"/>
-        </root>
-    </springProfile>
+    <root level="INFO">
+        <appender-ref ref="Console"/>
+        <appender-ref ref="Sentry"/>
+    </root>
 
 </configuration>
