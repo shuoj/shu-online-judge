@@ -148,7 +148,7 @@
                     <repository>${docker.image.namespace}/${docker.image.repository}</repository>
                     <buildArgs>
                         <JAR_FILE>target/${project.build.finalName}.jar</JAR_FILE>
-                        <APP_VERSION>${env.APP_VERSION}</APP_VERSION>
+                        <APP_VERSION>backend@${env.APP_VERSION}</APP_VERSION>
                     </buildArgs>
                 </configuration>
             </plugin>
