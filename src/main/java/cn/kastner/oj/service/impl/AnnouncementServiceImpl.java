@@ -77,6 +77,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
       throw new AnnouncementException(AnnouncementException.HAVE_SUCH_ANNOUNCEMENT);
     }
     Announcement announcement = mapper.dtoToEntity(announcementDTO);
+    announcement.setId(announcementDTO.getId());
     announcement.setAuthor(user);
     announcement.setModifiedDate(LocalDateTime.now());
     return mapper.entityToDTO(announcementRepository.save(announcement));
