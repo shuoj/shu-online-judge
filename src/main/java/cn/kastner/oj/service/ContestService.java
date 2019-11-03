@@ -16,7 +16,7 @@ public interface ContestService {
 
   ContestDTO create(ContestDTO contestDTO) throws ContestException;
 
-  ContestDTO delete(String id) throws ContestException;
+  void delete(String id) throws ContestException;
 
   ContestDTO update(ContestDTO contestDTO) throws ContestException;
 

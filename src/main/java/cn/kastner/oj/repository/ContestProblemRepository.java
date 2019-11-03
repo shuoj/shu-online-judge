@@ -19,4 +19,6 @@ public interface ContestProblemRepository
   List<ContestProblem> findAllByProblemAndContest(Iterable<Problem> problems, Contest contest);
 
   void deleteAllByProblemAndContest(Iterable<Problem> problems, Contest contest);
+
+  void deleteAllByContest(Contest contest);
 }

@@ -13,5 +13,9 @@ public interface TimeCostRepository
   TimeCost findByRankingUserAndContestProblemAndFrozen(
       RankingUser rankingUser, ContestProblem contestProblem, Boolean frozen);
 
-    List<TimeCost> findByRankingUserAndFrozen(RankingUser rankingUser, Boolean frozen);
+  List<TimeCost> findByRankingUserAndFrozen(RankingUser rankingUser, Boolean frozen);
+
+  List<TimeCost> findByRankingUser(RankingUser rankingUser);
+
+  void deleteByRankingUser(RankingUser rankingUser);
 }
