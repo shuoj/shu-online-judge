@@ -412,8 +412,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     userRepository.save(user);
   }
 
-  private void problemStatCounter(SubmissionDTO submissionDTO, Problem problem)
-      throws ProblemException {
+  private void problemStatCounter(SubmissionDTO submissionDTO, Problem problem) {
     problem.setSubmitCount(problem.getSubmitCount() + 1);
     if (Result.ACCEPTED.equals(Result.valueOf(submissionDTO.getResult()))) {
       problem.setAcceptCount(problem.getAcceptCount() + 1);
@@ -424,11 +423,11 @@ public class SubmissionServiceImpl implements SubmissionService {
 
   private void userTagStatCounter(
       User user,
-      List<Tag> tagList,
+      Set<Tag> tagSet,
       LocalDateTime lastSubmitTime,
       Integer scoreInc,
       Integer errorInc) {
-    for (Tag tag : tagList) {
+    for (Tag tag : tagSet) {
       UserTagStat userTagStat =
           userTagStatRepository
               .findByUserIdAndTagId(user.getId(), tag.getId())
@@ -441,7 +440,7 @@ public class SubmissionServiceImpl implements SubmissionService {
   }
 
   private void userProblemStatCounter(SubmissionDTO submissionDTO, User user, Problem problem) {
-    List<Tag> tagList = problem.getTagList();
+    Set<Tag> tagSet = problem.getTagList();
 
     UserProblemStat userProblemStat =
         userProblemStatRepository
@@ -452,19 +451,19 @@ public class SubmissionServiceImpl implements SubmissionService {
       if (Result.ACCEPTED.equals(Result.valueOf(submissionDTO.getResult()))) {
         if (userProblemStat.getErrorTimes() == 0) {
           userProblemStat.setScore(5);
-          userTagStatCounter(user, tagList, submissionDTO.getCreateDate(), 5, 0);
+          userTagStatCounter(user, tagSet, submissionDTO.getCreateDate(), 5, 0);
         } else {
           userProblemStat.setScore(userProblemStat.getScore() + 1);
-          userTagStatCounter(user, tagList, submissionDTO.getCreateDate(), 1, 0);
+          userTagStatCounter(user, tagSet, submissionDTO.getCreateDate(), 1, 0);
         }
         userProblemStat.setPassed(true);
       } else {
         if (userProblemStat.getErrorTimes() == 0) {
           userProblemStat.setScore(-2);
-          userTagStatCounter(user, tagList, submissionDTO.getCreateDate(), -2, 1);
+          userTagStatCounter(user, tagSet, submissionDTO.getCreateDate(), -2, 1);
         } else {
           userProblemStat.setScore(userProblemStat.getScore() - 1);
-          userTagStatCounter(user, tagList, submissionDTO.getCreateDate(), -1, 1);
+          userTagStatCounter(user, tagSet, submissionDTO.getCreateDate(), -1, 1);
         }
         userProblemStat.setErrorTimes(userProblemStat.getErrorTimes() + 1);
       }
@@ -553,7 +552,6 @@ public class SubmissionServiceImpl implements SubmissionService {
           resultResolved = true;
         }
       }
-
     }
     result.setCpuTime(maxCPUTime);
     result.setMemory(maxMemory);
