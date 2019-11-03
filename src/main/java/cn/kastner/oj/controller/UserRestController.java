@@ -5,13 +5,11 @@ import cn.kastner.oj.dto.ListDTO;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.UserGenerationParam;
 import cn.kastner.oj.exception.AppException;
-import cn.kastner.oj.exception.NoSuchItemException;
 import cn.kastner.oj.exception.UserException;
 import cn.kastner.oj.exception.ValidateException;
 import cn.kastner.oj.query.UserQuery;
 import cn.kastner.oj.security.JwtUser;
 import cn.kastner.oj.service.UserService;
-import cn.kastner.oj.util.NetResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -62,12 +60,8 @@ public class UserRestController {
 
   @DeleteMapping
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public NetResult delete(@RequestBody ListDTO<String> idList) throws NoSuchItemException {
-    userService.delete(idList.getList());
-    NetResult r = new NetResult();
-    r.code = 200;
-    r.message = "删除成功";
-    return r;
+  public void delete(@RequestBody ListDTO<String> idList) throws UserException {
+//    userService.delete(idList.getList());
   }
 
   @PostMapping(value = "/generate")
