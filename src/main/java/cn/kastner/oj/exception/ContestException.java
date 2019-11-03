@@ -20,6 +20,12 @@ public class ContestException extends AppException {
 
   public static final String CANNOT_SHARING = "比赛设置为不可分享";
 
+  public static final String CONTEST_IS_ENDED = "比赛结束后不可修改";
+
+  public static final String START_TIME_IS_EARLY_THAN_NOW = "开始时间早于当前时间";
+
+  public static final String START_TIME_IS_AFTER_THAN_END_TIME = "开始时间晚于结束时间";
+
   public ContestException(String message) {
     super(message);
     switch (message) {
@@ -53,6 +59,18 @@ public class ContestException extends AppException {
         break;
       case CANNOT_SHARING:
         this.code = -9;
+        this.status = HttpStatus.BAD_REQUEST;
+        break;
+      case CONTEST_IS_ENDED:
+        this.code = -10;
+        this.status = HttpStatus.BAD_REQUEST;
+        break;
+      case START_TIME_IS_EARLY_THAN_NOW:
+        this.code = -11;
+        this.status = HttpStatus.BAD_REQUEST;
+        break;
+      case START_TIME_IS_AFTER_THAN_END_TIME:
+        this.code = -12;
         this.status = HttpStatus.BAD_REQUEST;
         break;
       default:

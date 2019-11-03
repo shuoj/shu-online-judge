@@ -28,7 +28,10 @@ import org.springframework.stereotype.Service;
 import javax.persistence.criteria.Predicate;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -61,7 +64,8 @@ public class ContestServiceImpl implements ContestService {
       ContestProblemRepository contestProblemRepository,
       RankingUserRepository rankingUserRepository,
       GroupRepository groupRepository,
-      IndexSequenceRepository indexSequenceRepository, DTOMapper mapper) {
+      IndexSequenceRepository indexSequenceRepository,
+      DTOMapper mapper) {
     this.contestRepository = contestRepository;
     this.timeCostRepository = timeCostRepository;
     this.problemRepository = problemRepository;
@@ -83,6 +87,16 @@ public class ContestServiceImpl implements ContestService {
     }
 
     Contest contest = mapper.dtoToEntity(contestDTO);
+
+    if (contest.getStartDate().isEqual(LocalDateTime.now())
+        || contest.getStartDate().isBefore(LocalDateTime.now())) {
+      throw new ContestException(ContestException.START_TIME_IS_EARLY_THAN_NOW);
+    }
+
+    if (contest.getStartDate().isEqual(contest.getEndDate())
+        || contest.getStartDate().isAfter(contest.getEndDate())) {
+      throw new ContestException(ContestException.START_TIME_IS_AFTER_THAN_END_TIME);
+    }
 
     requirePassword(contest);
 
@@ -113,14 +127,58 @@ public class ContestServiceImpl implements ContestService {
   @Override
   public ContestDTO update(ContestDTO contestDTO) throws ContestException {
     User user = UserContext.getCurrentUser();
-    Optional<Contest> contestOptional = contestRepository.findByName(contestDTO.getName());
-    if (contestOptional.isPresent() && !contestOptional.get().getId().equals(contestDTO.getId())) {
-      throw new ContestException(ContestException.HAVE_SAME_NAME_CONTEST);
-    }
-    Contest contest = mapper.dtoToEntity(contestDTO);
-    contest.setId(contestDTO.getId());
+    Contest contest =
+        contestRepository
+            .findById(contestDTO.getId())
+            .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
 
-    requirePassword(contest);
+    if (ContestStatus.ENDED.equals(contest.getStatus())) {
+      throw new ContestException(ContestException.CONTEST_IS_ENDED);
+    }
+
+    if (!ContestStatus.PROCESSING.equals(contest.getStatus())) {
+      if (null != contestDTO.getName()) {
+        Optional<Contest> contestOptional = contestRepository.findByName(contestDTO.getName());
+        if (contestOptional.isPresent() && !contestOptional.get().getId().equals(contestDTO.getId())) {
+          throw new ContestException(ContestException.HAVE_SAME_NAME_CONTEST);
+        }
+        contest.setName(contestDTO.getName());
+      }
+
+      if (null != contestDTO.getCouldShare()) {
+        contest.setCouldShare(contestDTO.getCouldShare());
+      }
+
+      if (null != contestDTO.getContestType()) {
+        contest.setContestType(ContestType.valueOf(contestDTO.getContestType()));
+        requirePassword(contest);
+      }
+
+      if (null != contestDTO.getJudgeType()) {
+        contest.setJudgeType(JudgeType.valueOf(contestDTO.getJudgeType()));
+      }
+
+      if (null != contestDTO.getStatus()) {
+        // set status, enable, ranking
+        setContestStatus(contest, ContestStatus.valueOf(contestDTO.getStatus()));
+      }
+
+      if (null != contestDTO.getDescription()) {
+        contest.setDescription(contestDTO.getDescription());
+      }
+
+      if (null != contestDTO.getStartDate()) {
+        contest.setStartDate(contestDTO.getStartDate());
+      }
+
+      if (null != contestDTO.getPassword()) {
+        contest.setPassword(contestDTO.getPassword());
+      }
+    }
+
+    if (null != contestDTO.getEndDate()) {
+      contest.setEndDate(contestDTO.getEndDate());
+    }
 
     contest.setAuthor(user);
     return mapper.entityToDTO(contestRepository.save(contest));
@@ -254,6 +312,14 @@ public class ContestServiceImpl implements ContestService {
           return criteriaBuilder.and(predicateList.toArray(p));
         };
     List<Contest> contestList = contestRepository.findAll(cs, pageable).getContent();
+    for (Contest contest : contestList) {
+      if ((contest.getStartDate().isBefore(LocalDateTime.now())
+          || contest.getStartDate().isEqual(LocalDateTime.now()))
+          && contest.getStatus().equals(ContestStatus.NOT_STARTED)) {
+        setContestStatus(contest, ContestStatus.PROCESSING);
+      }
+    }
+    contestList = contestRepository.saveAll(contestList);
     Long count = contestRepository.count(cs);
     List<ContestDTO> contestDTOList = mapper.toContestDTOs(contestList);
     return new PageDTO<>(page, size, count, contestDTOList);
@@ -270,8 +336,10 @@ public class ContestServiceImpl implements ContestService {
     List<ContestProblem> contestProblemList = contestProblemRepository.findByContest(contest);
     List<Problem> problemList = getProblemList(contest);
     for (String problemId : problemIdList) {
-      Problem problem = problemRepository.findById(problemId)
-          .orElseThrow(() -> new ProblemException(ProblemException.NO_SUCH_PROBLEM));
+      Problem problem =
+          problemRepository
+              .findById(problemId)
+              .orElseThrow(() -> new ProblemException(ProblemException.NO_SUCH_PROBLEM));
       if (!problemList.contains(problem)) {
         ContestProblem contestProblem = new ContestProblem();
         contestProblem.setProblem(problem);
@@ -324,37 +392,50 @@ public class ContestServiceImpl implements ContestService {
             .findById(id)
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
 
-    Ranking ranking = contest.getRanking();
     switch (option) {
       case ENABLE:
-        contest.setStatus(ContestStatus.PROCESSING);
-        contest.setEnable(true);
-        rankingUserRepository.deleteAll(rankingUserRepository.findByRanking(ranking));
-        // initialize rankingUserList
-        List<RankingUser> rankingUserList = new ArrayList<>();
-        Iterator<User> userIterator = contest.getUserSet().iterator();
-        while (userIterator.hasNext()) {
-          User user = userIterator.next();
-          RankingUser rankingUser = RankingUserFactory.create(user, contest);
-          rankingUserList.add(rankingUser);
-        }
-        ranking.setRankingUserList(rankingUserList);
+        setContestStatus(contest, ContestStatus.PROCESSING);
         break;
       case DISABLE:
-        contest.setStatus(ContestStatus.ENDED);
-        contest.setEnable(false);
-        setProblemsVisible(contest);
+        setContestStatus(contest, ContestStatus.ENDED);
         break;
       case RESET:
+        setContestStatus(contest, ContestStatus.NOT_STARTED);
+        break;
+      default:
+    }
+    return mapper.entityToDTO(contestRepository.save(contest));
+  }
+
+  private void setContestStatus(Contest contest, ContestStatus status) {
+    Ranking ranking = contest.getRanking();
+    switch (status) {
+      case NOT_STARTED:
         contest.setStatus(ContestStatus.NOT_STARTED);
         contest.setEnable(false);
         rankingUserRepository.deleteAll(rankingUserRepository.findByRanking(ranking));
         contest.setRanking(ranking);
         break;
-      default:
+      case PROCESSING:
+        contest.setStatus(ContestStatus.PROCESSING);
+        contest.setEnable(true);
+        contest.setStartDate(LocalDateTime.now());
+        rankingUserRepository.deleteAll(rankingUserRepository.findByRanking(ranking));
+        // initialize rankingUserList
+        List<RankingUser> rankingUserList = new ArrayList<>();
+        for (User user : contest.getUserSet()) {
+          RankingUser rankingUser = RankingUserFactory.create(user, contest);
+          rankingUserList.add(rankingUser);
+        }
+        ranking.setRankingUserList(rankingUserList);
         break;
+      case ENDED:
+        contest.setEnable(false);
+        contest.setStatus(ContestStatus.ENDED);
+        setProblemsVisible(contest);
+        break;
+      default:
     }
-    return mapper.entityToDTO(contestRepository.save(contest));
   }
 
   @Override
@@ -365,6 +446,7 @@ public class ContestServiceImpl implements ContestService {
             .findById(id)
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
 
+    boolean result = false;
     switch (contest.getContestType()) {
       case PUBLIC:
         if (contest.getEnable()) {
@@ -379,9 +461,10 @@ public class ContestServiceImpl implements ContestService {
         ul.add(user);
         contest.setUserSet(ul);
         contestRepository.save(contest);
-        return true;
+        result = true;
+        break;
       case SECRET_WITHOUT_PASSWORD:
-        return false;
+        break;
       case SECRET_WITH_PASSWORD:
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         String encryptPassword = encoder.encode(password);
@@ -398,12 +481,16 @@ public class ContestServiceImpl implements ContestService {
           userSet.add(user);
           contest.setUserSet(userSet);
           contestRepository.save(contest);
-          return true;
+          result = true;
+        } else {
+          result = false;
         }
-        return false;
+        break;
       default:
-        return false;
+
     }
+
+    return result;
   }
 
   @Override
