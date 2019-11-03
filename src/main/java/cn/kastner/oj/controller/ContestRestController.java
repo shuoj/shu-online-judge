@@ -95,8 +95,8 @@ public class ContestRestController {
 
   @DeleteMapping("/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public ContestDTO deleteContest(@PathVariable String id) throws AppException {
-    return contestService.delete(id);
+  public void deleteContest(@PathVariable String id) throws AppException {
+    contestService.delete(id);
   }
 
   @GetMapping("/{id}/problems")

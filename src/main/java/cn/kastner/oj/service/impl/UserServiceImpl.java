@@ -7,12 +7,9 @@ import cn.kastner.oj.domain.security.AuthorityName;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.exception.FileException;
 import cn.kastner.oj.exception.GroupException;
-import cn.kastner.oj.exception.NoSuchItemException;
 import cn.kastner.oj.exception.UserException;
 import cn.kastner.oj.query.UserQuery;
-import cn.kastner.oj.repository.AuthorityRepository;
-import cn.kastner.oj.repository.GroupRepository;
-import cn.kastner.oj.repository.UserRepository;
+import cn.kastner.oj.repository.*;
 import cn.kastner.oj.security.JwtUser;
 import cn.kastner.oj.security.JwtUserFactory;
 import cn.kastner.oj.service.UserService;
@@ -46,14 +43,24 @@ public class UserServiceImpl implements UserService {
 
   private final GroupRepository groupRepository;
 
+  private final ProblemRepository problemRepository;
+
+  private final ContestRepository contestRepository;
+
+  private final SubmissionRepository submissionRepository;
+
+
   @Autowired
   public UserServiceImpl(
       UserRepository userRepository,
       AuthorityRepository authorityRepository,
-      GroupRepository groupRepository) {
+      GroupRepository groupRepository, ProblemRepository problemRepository, ContestRepository contestRepository, SubmissionRepository submissionRepository) {
     this.userRepository = userRepository;
     this.authorityRepository = authorityRepository;
     this.groupRepository = groupRepository;
+    this.problemRepository = problemRepository;
+    this.contestRepository = contestRepository;
+    this.submissionRepository = submissionRepository;
   }
 
   @Override
@@ -227,14 +234,15 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public void delete(List<String> idList) throws NoSuchItemException {
+  public void delete(List<String> idList) throws UserException {
     List<User> selectedUserList = new ArrayList<>();
     for (String id : idList) {
-      Optional<User> userOptional = userRepository.findById(id);
-      if (!userOptional.isPresent()) {
-        throw new NoSuchItemException("没有此用户！");
-      }
-      selectedUserList.add(userOptional.get());
+      User user =
+          userRepository
+              .findById(id)
+              .orElseThrow(() -> new UserException(UserException.NO_SUCH_USER));
+
+      selectedUserList.add(user);
     }
 
     userRepository.deleteAll(selectedUserList);
@@ -308,7 +316,7 @@ public class UserServiceImpl implements UserService {
         }
 
         String username = "g" + generateNum(group.getIdx().intValue()) + "#" + generateNum(index);
-        String password = encoder.encode(CommonUtil.generateStr(6));
+        String password = encoder.encode(username);
         String studentNumber = row.getCell(0).getStringCellValue();
         String firstname = row.getCell(1).getStringCellValue();
         String email = username + "@acmoj.shu.edu.cn";

@@ -117,14 +117,20 @@ public class ContestServiceImpl implements ContestService {
   }
 
   @Override
-  public ContestDTO delete(String id) throws ContestException {
-    Optional<Contest> contestOptional = contestRepository.findById(id);
-    if (!contestOptional.isPresent()) {
-      throw new ContestException(ContestException.NO_SUCH_CONTEST);
+  public void delete(String id) throws ContestException {
+    Contest contest =
+        contestRepository
+            .findById(id)
+            .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
+    Ranking ranking = rankingRepository.findByContest(contest);
+    List<RankingUser> rankingUserList = rankingUserRepository.findByRanking(ranking);
+    for (RankingUser rankingUser : rankingUserList) {
+      timeCostRepository.deleteByRankingUser(rankingUser);
     }
-    ContestDTO contestDTO = mapper.entityToDTO(contestOptional.get());
-    contestRepository.delete(contestOptional.get());
-    return contestDTO;
+    rankingUserRepository.deleteAll(rankingUserList);
+    rankingRepository.delete(ranking);
+    contestProblemRepository.deleteAllByContest(contest);
+    contestRepository.delete(contest);
   }
 
   @Override

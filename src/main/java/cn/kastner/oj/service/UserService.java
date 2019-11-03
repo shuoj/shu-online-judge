@@ -2,7 +2,9 @@ package cn.kastner.oj.service;
 
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.PageDTO;
-import cn.kastner.oj.exception.*;
+import cn.kastner.oj.exception.FileException;
+import cn.kastner.oj.exception.GroupException;
+import cn.kastner.oj.exception.UserException;
 import cn.kastner.oj.query.UserQuery;
 import cn.kastner.oj.security.JwtUser;
 
@@ -21,7 +23,7 @@ public interface UserService {
 
   JwtUser update(User user) throws UserException;
 
-  void delete(List<String> id) throws NoSuchItemException;
+  void delete(List<String> id) throws UserException;
 
   PageDTO<JwtUser> generateUser(String groupId, Long quantity) throws GroupException;
 
