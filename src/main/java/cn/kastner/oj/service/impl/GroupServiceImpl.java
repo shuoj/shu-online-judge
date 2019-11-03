@@ -105,12 +105,11 @@ public class GroupServiceImpl implements GroupService {
     if (existGroupOptional.isPresent()
         && !existGroupOptional.get().getId().equals(groupDTO.getId())) {
       throw new GroupException(GroupException.HAVE_SUCH_GROUP);
-    } else {
-      Set<User> userSet = group.getUserSet();
-      Group tempGroup = mapper.dtoToEntity(groupDTO);
-      tempGroup.setUserSet(userSet);
-      return mapper.entityToDTO(groupRepository.save(tempGroup));
     }
+    if (null != groupDTO.getName()) {
+      group.setName(groupDTO.getName());
+    }
+    return mapper.entityToDTO(groupRepository.save(group));
   }
 
   @Override
