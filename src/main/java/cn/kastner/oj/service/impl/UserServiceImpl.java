@@ -308,7 +308,7 @@ public class UserServiceImpl implements UserService {
         }
 
         String username = "g" + generateNum(group.getIdx().intValue()) + "#" + generateNum(index);
-        String password = encoder.encode(CommonUtil.generateStr(6));
+        String password = encoder.encode(username);
         String studentNumber = row.getCell(0).getStringCellValue();
         String firstname = row.getCell(1).getStringCellValue();
         String email = username + "@acmoj.shu.edu.cn";
