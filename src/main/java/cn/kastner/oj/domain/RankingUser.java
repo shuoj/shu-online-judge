@@ -33,8 +33,9 @@ public class RankingUser {
   @OneToOne(cascade = {CascadeType.ALL})
   private TimeCost totalTimeBefore;
 
-  @OneToMany(mappedBy = "rankingUser", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+  @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
   @Fetch(FetchMode.SUBSELECT)
+  @JoinTable(name = "time_cost_before")
   @OrderBy("id DESC ")
   private List<TimeCost> timeListBefore;
 
@@ -45,8 +46,9 @@ public class RankingUser {
   @OneToOne(cascade = {CascadeType.ALL})
   private TimeCost totalTimeAfter;
 
-  @OneToMany(mappedBy = "rankingUser", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+  @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
   @Fetch(FetchMode.SUBSELECT)
+  @JoinTable(name = "time_cost_after")
   @OrderBy("id DESC ")
   private List<TimeCost> timeListAfter;
 

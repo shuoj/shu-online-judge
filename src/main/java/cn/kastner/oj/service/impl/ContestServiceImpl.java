@@ -49,6 +49,8 @@ public class ContestServiceImpl implements ContestService {
 
   private final RankingUserRepository rankingUserRepository;
 
+  private final RankingRepository rankingRepository;
+
   private final GroupRepository groupRepository;
 
   private final IndexSequenceRepository indexSequenceRepository;
@@ -63,7 +65,7 @@ public class ContestServiceImpl implements ContestService {
       UserRepository userRepository,
       ContestProblemRepository contestProblemRepository,
       RankingUserRepository rankingUserRepository,
-      GroupRepository groupRepository,
+      RankingRepository rankingRepository, GroupRepository groupRepository,
       IndexSequenceRepository indexSequenceRepository,
       DTOMapper mapper) {
     this.contestRepository = contestRepository;
@@ -72,6 +74,7 @@ public class ContestServiceImpl implements ContestService {
     this.userRepository = userRepository;
     this.contestProblemRepository = contestProblemRepository;
     this.rankingUserRepository = rankingUserRepository;
+    this.rankingRepository = rankingRepository;
     this.groupRepository = groupRepository;
     this.indexSequenceRepository = indexSequenceRepository;
     this.mapper = mapper;
@@ -206,7 +209,7 @@ public class ContestServiceImpl implements ContestService {
             .findById(id)
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
 
-    if (!CommonUtil.isAdmin(user) && contest.getUserSet().contains(user)) {
+    if (!CommonUtil.isAdmin(user) && !contest.getUserSet().contains(user)) {
       if (ContestType.SECRET_WITH_PASSWORD.equals(contest.getContestType())) {
         throw new ContestException(ContestException.NOT_PASS_CONTEST_USER);
       } else if (ContestType.SECRET_WITHOUT_PASSWORD.equals(contest.getContestType())) {
@@ -254,8 +257,14 @@ public class ContestServiceImpl implements ContestService {
 
     Set<User> userSet = contest.getUserSet();
     List<User> userList = userRepository.findAllById(userIdList);
-    userSet.addAll(userList);
-
+    for (User user : userList) {
+      if (!userSet.contains(user)) {
+        userSet.add(user);
+        if (contest.getEnable()) {
+          addUserToRanking(contest, user);
+        }
+      }
+    }
     contest.setUserSet(userSet);
     contestRepository.save(contest);
     return JwtUserFactory.createList(userSet);
@@ -334,6 +343,7 @@ public class ContestServiceImpl implements ContestService {
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
 
     List<ContestProblem> contestProblemList = contestProblemRepository.findByContest(contest);
+    List<ContestProblem> addedContestProblemList = new ArrayList<>();
     List<Problem> problemList = getProblemList(contest);
     for (String problemId : problemIdList) {
       Problem problem =
@@ -345,11 +355,47 @@ public class ContestServiceImpl implements ContestService {
         contestProblem.setProblem(problem);
         contestProblem.setContest(contest);
         contestProblemList.add(contestProblem);
+        addedContestProblemList.add(contestProblem);
         problem.setVisible(false);
         problemList.add(problem);
       }
     }
     contestProblemRepository.saveAll(contestProblemList);
+
+    if (contest.getEnable()) {
+      Ranking ranking = contest.getRanking();
+      List<RankingUser> rankingUserList = ranking.getRankingUserList();
+      for (RankingUser rankingUser : rankingUserList) {
+        List<TimeCost> timeListBefore = rankingUser.getTimeListBefore();
+        List<TimeCost> timeListAfter = rankingUser.getTimeListAfter();
+        List<TimeCost> addTimeCostListBefore = new ArrayList<>();
+        List<TimeCost> addTimeCostListAfter = new ArrayList<>();
+        for (ContestProblem contestProblem : addedContestProblemList) {
+
+          TimeCost timeCostBefore = new TimeCost();
+          timeCostBefore.setContestProblem(contestProblem);
+          timeCostBefore.setRankingUser(rankingUser);
+          timeCostBefore.setFrozen(true);
+          addTimeCostListBefore.add(timeCostBefore);
+
+          TimeCost timeCostAfter = new TimeCost();
+          timeCostAfter.setContestProblem(contestProblem);
+          timeCostAfter.setRankingUser(rankingUser);
+          timeCostAfter.setFrozen(false);
+          addTimeCostListAfter.add(timeCostAfter);
+
+        }
+
+        timeListBefore.addAll(timeCostRepository.saveAll(addTimeCostListBefore));
+        timeListAfter.addAll(timeCostRepository.saveAll(addTimeCostListAfter));
+
+        rankingUser.setTimeListAfter(timeListAfter);
+        rankingUser.setTimeListBefore(timeListBefore);
+      }
+      ranking.setRankingUserList(rankingUserRepository.saveAll(rankingUserList));
+      rankingRepository.save(ranking);
+    }
+
     return mapper.toProblemDTOs(problemList);
   }
 
@@ -450,11 +496,7 @@ public class ContestServiceImpl implements ContestService {
     switch (contest.getContestType()) {
       case PUBLIC:
         if (contest.getEnable()) {
-          Ranking ranking = contest.getRanking();
-          List<RankingUser> rankingUserList = ranking.getRankingUserList();
-          RankingUser rankingUser = RankingUserFactory.create(user, contest);
-          rankingUserList.add(rankingUser);
-          ranking.setRankingUserList(rankingUserList);
+          addUserToRanking(contest, user);
         }
 
         Set<User> ul = contest.getUserSet();
@@ -467,14 +509,9 @@ public class ContestServiceImpl implements ContestService {
         break;
       case SECRET_WITH_PASSWORD:
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        String encryptPassword = encoder.encode(password);
-        if (contest.getPassword().equals(encryptPassword)) {
+        if (encoder.matches(password, contest.getPassword())) {
           if (contest.getEnable()) {
-            Ranking ranking = contest.getRanking();
-            List<RankingUser> rankingUserList = ranking.getRankingUserList();
-            RankingUser rankingUser = RankingUserFactory.create(user, contest);
-            rankingUserList.add(rankingUser);
-            ranking.setRankingUserList(rankingUserList);
+            addUserToRanking(contest, user);
           }
 
           Set<User> userSet = contest.getUserSet();
@@ -491,6 +528,15 @@ public class ContestServiceImpl implements ContestService {
     }
 
     return result;
+  }
+
+  private void addUserToRanking(Contest contest, User user) {
+    Ranking ranking = contest.getRanking();
+    List<RankingUser> rankingUserList = ranking.getRankingUserList();
+    RankingUser rankingUser = RankingUserFactory.create(user, contest);
+    rankingUserList.add(rankingUserRepository.save(rankingUser));
+    ranking.setRankingUserList(rankingUserList);
+    rankingRepository.save(ranking);
   }
 
   @Override
