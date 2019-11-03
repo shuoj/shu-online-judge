@@ -56,7 +56,8 @@ public class ProblemServiceImpl implements ProblemService {
       ContestProblemRepository contestProblemRepository,
       FileUploadService fileUploadService,
       TagRepository tagRepository,
-      IndexSequenceRepository indexSequenceRepository, DTOMapper mapper) {
+      IndexSequenceRepository indexSequenceRepository,
+      DTOMapper mapper) {
     this.uploadDirectory = uploadDirectory;
     this.problemRepository = problemRepository;
     this.contestProblemRepository = contestProblemRepository;
@@ -84,7 +85,8 @@ public class ProblemServiceImpl implements ProblemService {
 
           String title = problemQuery.getTitle();
           if (!CommonUtil.isNull(title)) {
-              predicateList.add(criteriaBuilder.like(root.get("title").as(String.class), "%" + title + "%"));
+            predicateList.add(
+                criteriaBuilder.like(root.get("title").as(String.class), "%" + title + "%"));
           }
 
           String tags = problemQuery.getTags();
@@ -101,7 +103,9 @@ public class ProblemServiceImpl implements ProblemService {
           }
 
           Boolean visible = problemQuery.getVisible();
-          if (user == null || !CommonUtil.isAdmin(user) || (visible != null && visible && CommonUtil.isAdmin(user))) {
+          if (user == null
+              || !CommonUtil.isAdmin(user)
+              || (visible != null && visible && CommonUtil.isAdmin(user))) {
             predicateList.add(criteriaBuilder.equal(root.get("visible"), true));
           }
 
@@ -116,7 +120,9 @@ public class ProblemServiceImpl implements ProblemService {
 
   @Override
   public ProblemDTO findProblemById(String id) throws ProblemException {
-    Problem problem = problemRepository.findById(id)
+    Problem problem =
+        problemRepository
+            .findById(id)
             .orElseThrow(() -> new ProblemException(ProblemException.NO_SUCH_PROBLEM));
     return mapper.entityToDTO(problem);
   }
@@ -135,27 +141,17 @@ public class ProblemServiceImpl implements ProblemService {
     } else {
       problem = mapper.dtoToEntity(problemDTO);
       problem.setAuthor(user);
-      problem.setTagList(correctTagList(problem));
+
+      problem.setTagList(new HashSet<>());
+      setTagSet(problem, mapper.toTags(problemDTO.getTagList()));
 
       if (!validateSampleIO(problemDTO.getSampleIOList())) {
         throw new ProblemException(ProblemException.SAMPLE_IO_INVALID);
       }
       problem.setSampleIO(JSON.toJSONString(problemDTO.getSampleIOList()));
 
-      String prefix =
-          File.separator + "problems" + File.separator + problem.getId() + File.separator;
-      try {
-        problem.setTestData(fileUploadService.saveFile(problem.getTestData(), prefix));
-      } catch (IOException e) {
-        e.printStackTrace();
-        throw new ProblemException(ProblemException.TEST_DATA_PATH_INVALID);
-      }
+      setTestData(problem, problemDTO.getTestData());
 
-      try {
-        processTestcase(problem, problem.getSpecialJudged());
-      } catch (FileException e) {
-        throw new ProblemException(e);
-      }
       problem.setTestData("testDataDirectory:" + problem.getTestData());
       IndexSequence sequence = indexSequenceRepository.findByName(EntityName.PROBLEM);
       problem.setIdx(sequence.getNextIdx());
@@ -171,70 +167,131 @@ public class ProblemServiceImpl implements ProblemService {
     User user = UserContext.getCurrentUser();
 
     String id = problemDTO.getId();
-    String title = problemDTO.getTitle();
-    Problem problem = problemRepository.findByTitle(title);
-    if (problem != null && !problem.getId().equals(id)) {
-      throw new ProblemException(ProblemException.HAVE_SUCH_TITLE_PROBLEM);
+
+    Problem problem =
+        problemRepository
+            .findById(id)
+            .orElseThrow(() -> new ProblemException(ProblemException.NO_SUCH_PROBLEM));
+
+    if (null != problemDTO.getVisible()) {
+      problem.setVisible(problemDTO.getVisible());
     }
-
-    problem = mapper.dtoToEntity(problemDTO);
-    problem.setId(id);
-    problem.setAuthor(user);
-
-    problem.setTagList(correctTagList(problem));
 
     if (!validateSampleIO(problemDTO.getSampleIOList())) {
       throw new ProblemException(ProblemException.SAMPLE_IO_INVALID);
     }
     problem.setSampleIO(JSON.toJSONString(problemDTO.getSampleIOList()));
 
-    if (!problem.getTestData().contains("testDataDirectory")) {
-      String prefix = File.separator + "problems" + File.separator + problem.getId() + File.separator;
-      try {
-//      String relativePath = ;
-        problem.setTestData(fileUploadService.saveFile(problem.getTestData(), prefix));
-      } catch (IOException e) {
-        e.printStackTrace();
-        throw new ProblemException(ProblemException.TEST_DATA_PATH_INVALID);
+    if (null != problemDTO.getTitle() && !problem.getTitle().equals(problemDTO.getTitle())) {
+      Problem p = problemRepository.findByTitle(problemDTO.getTitle());
+      if (p != null && !p.getId().equals(id)) {
+        throw new ProblemException(ProblemException.HAVE_SUCH_TITLE_PROBLEM);
       }
-
-      try {
-        processTestcase(problem, problem.getSpecialJudged());
-      } catch (FileException e) {
-        throw new ProblemException(e);
-      }
+      problem.setTitle(problemDTO.getTitle());
     }
+
+    if (null != problemDTO.getDifficulty()) {
+      problem.setDifficulty(Difficulty.valueOf(problemDTO.getDifficulty()));
+    }
+
+    if (null != problemDTO.getDescription()) {
+      problem.setDescription(problemDTO.getDescription());
+    }
+
+    if (null != problemDTO.getHint()) {
+      problem.setHint(problemDTO.getHint());
+    }
+
+    if (null != problemDTO.getInputDesc()) {
+      problem.setInputDesc(problemDTO.getInputDesc());
+    }
+
+    if (null != problemDTO.getOutputDesc()) {
+      problem.setOutputDesc(problemDTO.getOutputDesc());
+    }
+
+    if (null != problemDTO.getRamLimit()) {
+      problem.setRamLimit(problemDTO.getRamLimit());
+    }
+
+    if (null != problemDTO.getTimeLimit()) {
+      problem.setTimeLimit(problemDTO.getTimeLimit());
+    }
+
+    if (null != problemDTO.getSource()) {
+      problem.setSource(problemDTO.getSource());
+    }
+
+    if (null != problemDTO.getTestData() && !problemDTO.getTestData().contains("testDataDirectory")) {
+      setTestData(problem, problemDTO.getTestData());
+    }
+
+    if (null != problemDTO.getSpecialJudged()) {
+      problem.setSpecialJudged(problemDTO.getSpecialJudged());
+    }
+
+    if (null != problemDTO.getTagList()) {
+      setTagSet(problem, mapper.toTags(problemDTO.getTagList()));
+    }
+
+    problem.setId(id);
+    problem.setAuthor(user);
 
     return mapper.entityToDTO(problemRepository.save(problem));
   }
 
+  private void setTestData(Problem problem, String testData) throws ProblemException {
+    String prefix =
+        File.separator + "problems" + File.separator + problem.getId() + File.separator;
+    try {
+      problem.setTestData(fileUploadService.saveFile(testData, prefix));
+    } catch (IOException e) {
+      throw new ProblemException(ProblemException.TEST_DATA_PATH_INVALID);
+    }
+
+    try {
+      processTestcase(problem, problem.getSpecialJudged());
+    } catch (FileException e) {
+      throw new ProblemException(e);
+    }
+  }
+
   @Override
   public ProblemDTO delete(String id) throws ProblemException {
-    Problem problem = problemRepository.findById(id)
+    Problem problem =
+        problemRepository
+            .findById(id)
             .orElseThrow(() -> new ProblemException(ProblemException.NO_SUCH_PROBLEM));
     if (!contestProblemRepository.findByProblem(problem).isEmpty()) {
       throw new ProblemException(ProblemException.PROBLEM_REFERENCED);
     }
+    Set<Tag> tagSet = problem.getTagList();
+    for (Tag tag : tagSet) {
+      tag.setProblemCount(tag.getProblemCount() - 1);
+    }
+    tagRepository.saveAll(tagSet);
     problemRepository.delete(problem);
     return mapper.entityToDTO(problem);
   }
 
-  private List<Tag> correctTagList(Problem problem) {
-    List<Tag> tagList = new ArrayList<>();
-    for (Tag t : problem.getTagList()) {
-      Optional<Tag> tagOptional = tagRepository.findByName(t.getName());
-      if (tagOptional.isPresent()) {
-        Tag tag = tagOptional.get();
-        tag.setProblemCount(tag.getProblemCount() + 1);
-        tagList.add(tag);
-      } else {
-        Tag newTag = new Tag();
-        newTag.setName(t.getName());
-        newTag.setProblemCount(newTag.getProblemCount() + 1);
-        tagList.add(newTag);
+  private void setTagSet(Problem problem, Set<Tag> tagSet) {
+    Set<Tag> existTags = problem.getTagList();
+    for (Tag t : tagSet) {
+      if (!existTags.contains(t)) {
+        Optional<Tag> tagOptional = tagRepository.findByName(t.getName());
+        if (tagOptional.isPresent()) {
+          Tag tag = tagOptional.get();
+          tag.setProblemCount(tag.getProblemCount() + 1);
+          existTags.add(tag);
+        } else {
+          Tag newTag = new Tag();
+          newTag.setName(t.getName());
+          newTag.setProblemCount(newTag.getProblemCount() + 1);
+          existTags.add(newTag);
+        }
       }
     }
-    return tagList;
+    problem.setTagList(existTags);
   }
 
   private boolean validateSampleIO(List<SampleIO> sampleIOList) {
