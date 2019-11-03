@@ -17,4 +17,25 @@ public class TagDTO {
   public TagDTO() {
     this.problemCount = 0L;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+
+    if (!(o instanceof TagDTO)) {
+      return false;
+    }
+
+    TagDTO tagDTO = (TagDTO) o;
+    return tagDTO.name.equals(name);
+  }
+
+  @Override
+  public int hashCode() {
+    int code = 20;
+    code = code * 30 + name.hashCode();
+    return code;
+  }
 }

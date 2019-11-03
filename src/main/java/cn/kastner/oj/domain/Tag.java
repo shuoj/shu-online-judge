@@ -34,4 +34,25 @@ public class Tag {
     this.problemCount = 0L;
     this.problemList = new ArrayList<>();
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+
+    if (!(o instanceof Tag)) {
+      return false;
+    }
+
+    Tag tag = (Tag) o;
+    return tag.name.equals(name);
+  }
+
+  @Override
+  public int hashCode() {
+    int code = 20;
+    code = code * 30 + name.hashCode();
+    return code;
+  }
 }
