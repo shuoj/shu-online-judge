@@ -5,9 +5,11 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Data
 public class ProblemDTO {
@@ -39,7 +41,7 @@ public class ProblemDTO {
 
   private Boolean visible;
 
-  private List<TagDTO> tagList;
+  private Set<TagDTO> tagList;
 
   @NotBlank(message = "输入描述不能为空")
   private String inputDesc;
@@ -47,7 +49,7 @@ public class ProblemDTO {
   @NotBlank(message = "输出描述不能为空")
   private String outputDesc;
 
-  @NotNull(message = "样例不能为空")
+  @NotEmpty(message = "样例不能为空")
   private List<SampleIO> sampleIOList;
 
   private String sampleIO;

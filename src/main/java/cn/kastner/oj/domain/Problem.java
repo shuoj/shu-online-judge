@@ -7,8 +7,9 @@ import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -51,7 +52,7 @@ public class Problem {
       name = "problem_tag",
       joinColumns = {@JoinColumn(name = "problem_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "tag_id", referencedColumnName = "id")})
-  private List<Tag> tagList;
+  private Set<Tag> tagList;
 
   @Column(columnDefinition = "TEXT")
   private String inputDesc;
@@ -91,7 +92,7 @@ public class Problem {
   public Problem() {
     this.id = UUID.randomUUID().toString();
     this.visible = true;
-    this.tagList = new ArrayList<>();
+    this.tagList = new HashSet<>();
     this.specialJudged = false;
     this.hint = "";
     this.source = "";

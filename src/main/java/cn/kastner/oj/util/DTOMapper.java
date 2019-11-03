@@ -11,6 +11,7 @@ import org.mapstruct.Mapping;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Mapper(componentModel = "spring")
 public interface DTOMapper {
@@ -59,7 +60,12 @@ public interface DTOMapper {
   @Mapping(target = "id", ignore = true)
   Tag dtoToEntity(TagDTO tagDTO);
 
+  Set<TagDTO> toTagDTOs(Set<Tag> tags);
+
   List<TagDTO> toTagDTOs(List<Tag> tags);
+
+  @InheritInverseConfiguration
+  Set<Tag> toTags(Set<TagDTO> tagDTOs);
 
   @Mapping(target = "authorName", source = "author.username")
   @Mapping(target = "authorId", source = "author.id")
