@@ -19,23 +19,26 @@ public final class RankingUserFactory {
     rankingUser.setUser(user);
 
     // initialize timeCostList
-    List<TimeCost> timeCostList = new ArrayList<>();
+    List<TimeCost> timeCostListAfter = new ArrayList<>();
+    List<TimeCost> timeCostListBefore = new ArrayList<>();
     for (ContestProblem contestProblem : contestProblemSet) {
-      TimeCost timeCost = new TimeCost();
-      timeCost.setContestProblem(contestProblem);
-      timeCost.setRankingUser(rankingUser);
-      timeCost.setFrozen(false);
-      timeCostList.add(timeCost);
-    }
-    rankingUser.setTimeListAfter(timeCostList);
-    for (TimeCost tc : timeCostList) {
-      tc.setFrozen(true);
-    }
-    rankingUser.setTimeListBefore(timeCostList);
+      TimeCost timeCostBefore = new TimeCost();
+      timeCostBefore.setContestProblem(contestProblem);
+      timeCostBefore.setRankingUser(rankingUser);
+      timeCostBefore.setFrozen(true);
+      timeCostListBefore.add(timeCostBefore);
 
-    TimeCost timeCost = new TimeCost();
-    rankingUser.setTotalTimeAfter(timeCost);
-    rankingUser.setTotalTimeBefore(timeCost);
+      TimeCost timeCostAfter = new TimeCost();
+      timeCostAfter.setContestProblem(contestProblem);
+      timeCostAfter.setRankingUser(rankingUser);
+      timeCostAfter.setFrozen(false);
+      timeCostListAfter.add(timeCostAfter);
+    }
+    rankingUser.setTimeListAfter(timeCostListAfter);
+    rankingUser.setTimeListBefore(timeCostListBefore);
+
+    rankingUser.setTotalTimeAfter(new TimeCost());
+    rankingUser.setTotalTimeBefore(new TimeCost());
 
     // process exclude rankingUser
     if (!ranking.getUserListExcluded().contains(user)) {
