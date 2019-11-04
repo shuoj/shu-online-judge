@@ -137,7 +137,6 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public JwtUser create(User user) throws UserException {
-    user.setId(null);
 
     final String username = user.getUsername();
     Optional<User> userOptional = userRepository.findUserByUsername(username);
@@ -159,6 +158,7 @@ public class UserServiceImpl implements UserService {
     for (Authority authority : user.getAuthorities()) {
       authorities.add(authorityRepository.findByName(authority.getName()));
     }
+    user.setName(user.getFirstname() + user.getLastname());
     user.setAuthorities(authorities);
     return JwtUserFactory.create(userRepository.save(user));
   }
