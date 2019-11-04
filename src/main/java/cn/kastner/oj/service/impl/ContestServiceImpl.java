@@ -368,7 +368,7 @@ public class ContestServiceImpl implements ContestService {
     }
     contestProblemRepository.saveAll(contestProblemList);
 
-    if (contest.getEnable()) {
+    if (contest.getEnable() && !addedContestProblemList.isEmpty()) {
       Ranking ranking = contest.getRanking();
       List<RankingUser> rankingUserList = ranking.getRankingUserList();
       for (RankingUser rankingUser : rankingUserList) {
@@ -406,7 +406,65 @@ public class ContestServiceImpl implements ContestService {
   }
 
   @Override
-  public List<ProblemDTO> deleteProblems(List<String> problemIdList, String contestId)
+  public void addProblem(String problemId, String contestId, Integer score) throws ContestException, ProblemException {
+    Contest contest =
+        contestRepository
+            .findById(contestId)
+            .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
+
+    if (!contest.getJudgeType().equals(JudgeType.DELAY)) {
+      throw new ContestException(ContestException.WRONG_CONTEST_TYPE);
+    }
+
+    List<Problem> problemList = getProblemList(contest);
+    Problem problem =
+        problemRepository
+            .findById(problemId)
+            .orElseThrow(() -> new ProblemException(ProblemException.NO_SUCH_PROBLEM));
+    ContestProblem contestProblem;
+    if (!problemList.contains(problem)) {
+      contestProblem = new ContestProblem();
+      contestProblem.setProblem(problem);
+      contestProblem.setContest(contest);
+      contestProblem.setScore(score);
+      problem.setVisible(false);
+      problemList.add(problem);
+      contestProblemRepository.save(contestProblem);
+      if (contest.getEnable()) {
+        Ranking ranking = contest.getRanking();
+        List<RankingUser> rankingUserList = ranking.getRankingUserList();
+        for (RankingUser rankingUser : rankingUserList) {
+          List<TimeCost> timeListBefore = rankingUser.getTimeListBefore();
+          List<TimeCost> timeListAfter = rankingUser.getTimeListAfter();
+          List<TimeCost> addTimeCostListBefore = new ArrayList<>();
+          List<TimeCost> addTimeCostListAfter = new ArrayList<>();
+          TimeCost timeCostBefore = new TimeCost();
+          timeCostBefore.setContestProblem(contestProblem);
+          timeCostBefore.setRankingUser(rankingUser);
+          timeCostBefore.setFrozen(true);
+          addTimeCostListBefore.add(timeCostBefore);
+
+          TimeCost timeCostAfter = new TimeCost();
+          timeCostAfter.setContestProblem(contestProblem);
+          timeCostAfter.setRankingUser(rankingUser);
+          timeCostAfter.setFrozen(false);
+          addTimeCostListAfter.add(timeCostAfter);
+
+          timeListBefore.addAll(timeCostRepository.saveAll(addTimeCostListBefore));
+          timeListAfter.addAll(timeCostRepository.saveAll(addTimeCostListAfter));
+
+          rankingUser.setTimeListAfter(timeListAfter);
+          rankingUser.setTimeListBefore(timeListBefore);
+        }
+        ranking.setRankingUserList(rankingUserRepository.saveAll(rankingUserList));
+        rankingRepository.save(ranking);
+      }
+    }
+
+  }
+
+  @Override
+  public void deleteProblems(List<String> problemIdList, String contestId)
       throws ContestException {
 
     Contest contest =
@@ -416,10 +474,7 @@ public class ContestServiceImpl implements ContestService {
 
     List<Problem> pl = problemRepository.findAllById(problemIdList);
     contestProblemRepository.deleteAllByProblemAndContest(pl, contest);
-
-    List<Problem> problemList = getProblemList(contest);
     contestRepository.save(contest);
-    return mapper.toProblemDTOs(problemList);
   }
 
   @Override
@@ -555,15 +610,15 @@ public class ContestServiceImpl implements ContestService {
     Ranking ranking = contest.getRanking();
     List<RankingUser> rankingUserList = rankingUserRepository.findByRanking(ranking);
     for (RankingUser ru : rankingUserList) {
-      List<TimeCost> timeCostList = timeCostRepository.findByRankingUserAndFrozen(ru, false);
-      ru.setTimeListBefore(timeCostList);
+      if (LocalDateTime.now().isBefore(contest.getEndDate())) {
+        ru.setTimeListBefore(timeCostRepository.findByRankingUserAndContestProblemIsNotNullAndFrozen(ru, true));
+      } else {
+        ru.setTimeListAfter(timeCostRepository.findByRankingUserAndContestProblemIsNotNullAndFrozen(ru, true));
+      }
     }
     ranking.setRankingUserList(rankingUserList);
-    if (LocalDateTime.now().isBefore(contest.getStartDate().plusHours(4))) {
-      return mapper.entityToDTO(ranking, false);
-    } else {
-      return mapper.entityToDTO(ranking, true);
-    }
+
+    return mapper.entityToDTO(ranking, LocalDateTime.now().isBefore(contest.getEndDate()));
   }
 
   private void requirePassword(Contest contest) throws ContestException {

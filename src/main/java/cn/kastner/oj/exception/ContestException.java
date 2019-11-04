@@ -26,6 +26,8 @@ public class ContestException extends AppException {
 
   public static final String START_TIME_IS_AFTER_THAN_END_TIME = "开始时间晚于结束时间";
 
+  public static final String WRONG_CONTEST_TYPE = "此方法只有OI型比赛可调用";
+
   public ContestException(String message) {
     super(message);
     switch (message) {
@@ -73,6 +75,9 @@ public class ContestException extends AppException {
         this.code = -12;
         this.status = HttpStatus.BAD_REQUEST;
         break;
+      case WRONG_CONTEST_TYPE:
+        this.code = -13;
+        this.status = HttpStatus.BAD_REQUEST;
       default:
         this.code = -1;
         this.status = HttpStatus.INTERNAL_SERVER_ERROR;

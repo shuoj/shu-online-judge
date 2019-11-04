@@ -174,7 +174,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         contestRepository
             .findById(submissionDTO.getContestId())
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
-
+    boolean isNOIP = contest.getJudgeType().equals(JudgeType.IMMEDIATELY);
     if (!CommonUtil.isAdmin(user)) {
       requireContestUser(contest, user);
       requireContestOnGoing(contest);
@@ -189,6 +189,8 @@ public class SubmissionServiceImpl implements SubmissionService {
     submission.setIsPractice(false);
     submission.setProblem(problem);
 
+    long duration = Duration.between(contest.getStartDate(), LocalDateTime.now()).toMillis();
+
     JudgeResult judgeResult = judge(submission, problem);
 
     submission.setDuration(judgeResult.getRealTime());
@@ -196,24 +198,75 @@ public class SubmissionServiceImpl implements SubmissionService {
     submission.setResultDetail(JSON.toJSONString(judgeResult));
     submission.setMemory(judgeResult.getMemory());
     submissionRepository.save(submission);
+
     ContestProblem contestProblem =
         contestProblemRepository.findByContestAndProblem(contest, problem);
     Ranking ranking = contest.getRanking();
     RankingUser rankingUser = rankingUserRepository.findByRankingAndUser(ranking, user);
 
-    if (LocalDateTime.now().isBefore(contest.getStartDate().plusHours(4))) {
-      rankingUser.setSubmitCountBefore(rankingUser.getSubmitCountBefore() + 1);
-      contestProblem.setSubmitCountBefore(contestProblem.getSubmitCountBefore() + 1);
-      TimeCost timeCost =
-          timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
-              rankingUser, contestProblem, true);
-      timeCost.setTotalTime(
-          Duration.between(contest.getStartDate(), LocalDateTime.now()).toMillis());
-      timeCost.setSubmitted(true);
-      switch (submission.getResult()) {
-        case ACCEPTED:
-          rankingUser.setAcceptCountBefore(rankingUser.getAcceptCountBefore() + 1);
-          contestProblem.setAcceptCountBefore(contestProblem.getAcceptCountBefore() + 1);
+    TimeCost timeCostAfter =
+        timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
+            rankingUser, contestProblem, false);
+    double score = contestProblem.getScore() * (double) judgeResult.getPassedCount() / judgeResult.getTotalCount();
+    // if problem has been passed, the submission won't produce any effects on ranking
+    if ((isNOIP && !timeCostAfter.getPassed()) || (!isNOIP && score > timeCostAfter.getScore())) {
+
+      TimeCost timeCostTotalAfter =
+          timeCostRepository.findByRankingUserAndContestProblemIsNullAndFrozen(rankingUser, false);
+      timeCostTotalAfter.addTotalTime(duration);
+      timeCostTotalAfter.addScore(score - timeCostAfter.getScore());
+
+      rankingUser.addSubmitCountAfter(1);
+      contestProblem.addSubmitCountAfter(1);
+      timeCostAfter.setTotalTime(duration);
+      timeCostAfter.setSubmitted(true);
+      timeCostAfter.setScore(score);
+      if (submission.getResult() == Result.ACCEPTED) {
+        rankingUser.addAcceptCountAfter(1);
+        contestProblem.addAcceptCountAfter(1);
+        if (contestProblem.getFirstSubmission() == null) {
+          contestProblem.setFirstSubmission(submission);
+          timeCostAfter.setFirstPassed(true);
+        }
+        if (!timeCostAfter.getPassed()) {
+          timeCostAfter.setPassed(true);
+        }
+      } else {
+        if (!timeCostAfter.getPassed()) {
+          timeCostAfter.addErrorCount(1);
+          timeCostTotalAfter.addTotalTime(Duration.ofMinutes(30).toMillis());
+        }
+      }
+
+      contestProblem.computeAcceptRateAfter();
+      timeCostRepository.save(timeCostAfter);
+      timeCostRepository.save(timeCostTotalAfter);
+
+      if (!contest.isRankingFrozen()) {
+
+        rankingUser.addSubmitCountBefore(1);
+        contestProblem.addSubmitCountBefore(1);
+
+        TimeCost timeCost =
+            timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
+                rankingUser, contestProblem, true);
+
+        TimeCost timeCostTotal =
+            timeCostRepository.findByRankingUserAndContestProblemIsNullAndFrozen(rankingUser, true);
+        timeCostTotal.addTotalTime(duration);
+        timeCostTotal.addScore(score - timeCost.getScore());
+
+        timeCost.setTotalTime(duration);
+        timeCost.setSubmitted(true);
+        timeCost.setScore(score);
+
+
+
+        if (submission.getResult() == Result.ACCEPTED) {
+
+          rankingUser.addAcceptCountBefore(1);
+          contestProblem.addAcceptCountBefore(1);
+
           if (contestProblem.getFirstSubmission() == null) {
             contestProblem.setFirstSubmission(submission);
             timeCost.setFirstPassed(true);
@@ -221,52 +274,23 @@ public class SubmissionServiceImpl implements SubmissionService {
           if (!timeCost.getPassed()) {
             timeCost.setPassed(true);
           }
-          break;
-        default:
+        } else {
           if (!timeCost.getPassed()) {
-            timeCost.setPassed(false);
-            timeCost.setErrorCount(timeCost.getErrorCount() + 1);
+            timeCost.addErrorCount(1);
+            timeCostTotal.addTotalTime(Duration.ofMinutes(30).toMillis());
           }
+        }
+
+        contestProblem.computeAcceptRateBefore();
+
+        timeCostRepository.save(timeCost);
+        timeCostRepository.save(timeCostTotal);
       }
-      if (contestProblem.getSubmitCountBefore() != 0) {
-        contestProblem.setAcceptRateBefore(
-            (double) contestProblem.getAcceptCountBefore() / contestProblem.getSubmitCountBefore());
-      }
-      rankingUser.setTotalTimeBefore(timeCost);
-    }
-    rankingUser.setSubmitCountAfter(rankingUser.getSubmitCountAfter() + 1);
-    contestProblem.setSubmitCountAfter(contestProblem.getSubmitCountAfter() + 1);
-    TimeCost timeCost =
-        timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
-            rankingUser, contestProblem, true);
-    timeCost.setTotalTime(Duration.between(contest.getStartDate(), LocalDateTime.now()).toMillis());
-    timeCost.setSubmitted(true);
-    switch (submission.getResult()) {
-      case ACCEPTED:
-        rankingUser.setAcceptCountAfter(rankingUser.getAcceptCountAfter() + 1);
-        contestProblem.setAcceptCountAfter(contestProblem.getAcceptCountAfter() + 1);
-        if (contestProblem.getFirstSubmission() == null) {
-          contestProblem.setFirstSubmission(submission);
-          timeCost.setFirstPassed(true);
-        }
-        if (!timeCost.getPassed()) {
-          timeCost.setPassed(true);
-        }
-        break;
-      default:
-        if (!timeCost.getPassed()) {
-          timeCost.setPassed(false);
-        }
-        break;
+
+      rankingUserRepository.save(rankingUser);
+      contestProblemRepository.save(contestProblem);
     }
 
-    if (contestProblem.getSubmitCountAfter() != 0) {
-      contestProblem.setAcceptRateAfter(
-          (double) contestProblem.getAcceptCountAfter() / contestProblem.getSubmitCountAfter());
-    }
-    rankingUser.setTotalTimeAfter(timeCost);
-    rankingUserRepository.save(rankingUser);
-    contestProblemRepository.save(contestProblem);
     //    submissionCounter(submission, user);
     return mapper.entityToDTO(submissionRepository.save(submission));
   }

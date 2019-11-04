@@ -12,33 +12,37 @@ public class TimeCost {
 
   @Id
   @Column(length = 40)
-  private String id;
+  private String id = UUID.randomUUID().toString();
 
   @OneToOne
   private ContestProblem contestProblem;
 
-  private Long totalTime;
+  private Long totalTime = 0L;
 
-  private Integer errorCount;
+  private Integer errorCount = 0;
 
-  private Boolean submitted;
+  private Boolean submitted = false;
 
-  private Boolean passed;
+  private Boolean passed = false;
 
-  private Boolean firstPassed;
+  private Boolean firstPassed = false;
 
-  private Boolean frozen;
+  private Boolean frozen = false;
+
+  private Double score = 0.0;
 
   @ManyToOne
   private RankingUser rankingUser;
 
-  public TimeCost() {
-    this.id = UUID.randomUUID().toString();
-    this.totalTime = (long) 0;
-    this.errorCount = 0;
-    this.submitted = false;
-    this.passed = false;
-    this.firstPassed = false;
-      this.frozen = false;
+  public void addTotalTime(Long milliseconds) {
+    this.totalTime += milliseconds;
+  }
+
+  public void addErrorCount(Integer count) {
+    this.errorCount += count;
+  }
+
+  public void addScore(Double score) {
+    this.score += score;
   }
 }

@@ -12,7 +12,7 @@ public class ContestProblem {
 
   @Id
   @Column(length = 40)
-  private String id;
+  private String id = UUID.randomUUID().toString();
 
   @ManyToOne
   @JoinColumn(name = "contest_id")
@@ -22,17 +22,19 @@ public class ContestProblem {
   @JoinColumn(name = "problem_id")
   private Problem problem;
 
-  private Integer acceptCountBefore;
+  private Integer acceptCountBefore = 0;
 
-  private Integer submitCountBefore;
+  private Integer submitCountBefore = 0;
 
-  private Double acceptRateBefore;
+  private Double acceptRateBefore = 0.0;
 
-  private Integer acceptCountAfter;
+  private Integer acceptCountAfter = 0;
 
-  private Integer submitCountAfter;
+  private Integer submitCountAfter = 0;
 
-  private Double acceptRateAfter;
+  private Double acceptRateAfter = 0.0;
+
+  private Integer score = 0;
 
   @OneToOne(cascade = CascadeType.ALL)
   private TimeCost timeListAfter;
@@ -40,15 +42,6 @@ public class ContestProblem {
   @OneToOne
   private Submission firstSubmission;
 
-  public ContestProblem() {
-    this.id = UUID.randomUUID().toString();
-    this.acceptCountBefore = 0;
-    this.submitCountBefore = 0;
-    this.acceptRateBefore = 0.0;
-    this.acceptCountAfter = 0;
-    this.submitCountAfter = 0;
-    this.acceptRateAfter = 0.0;
-  }
 
   public String getContestId() {
     return this.contest.getId();
@@ -78,5 +71,33 @@ public class ContestProblem {
     int code = 20;
     code = code * 30 + id.hashCode();
     return code;
+  }
+
+  public void addAcceptCountBefore(Integer acceptCount) {
+    this.acceptCountBefore += acceptCount;
+  }
+
+  public void addSubmitCountBefore(Integer submitCount) {
+    this.submitCountBefore += submitCount;
+  }
+
+  public void addAcceptCountAfter(Integer acceptCount) {
+    this.acceptCountAfter += acceptCount;
+  }
+
+  public void addSubmitCountAfter(Integer submitCount) {
+    this.submitCountAfter += submitCount;
+  }
+
+  public void computeAcceptRateBefore() {
+    if (submitCountBefore != 0) {
+      acceptRateBefore = (double) acceptCountBefore / submitCountBefore;
+    }
+  }
+
+  public void computeAcceptRateAfter() {
+    if (submitCountAfter != 0) {
+      acceptRateAfter = (double) acceptCountAfter / submitCountAfter;
+    }
   }
 }

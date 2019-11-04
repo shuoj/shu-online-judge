@@ -98,4 +98,9 @@ public class Contest {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     this.password = encoder.encode(password);
   }
+
+  public boolean isRankingFrozen() {
+    return LocalDateTime.now().isAfter(this.startDate.plusHours(4));
+  }
+
 }

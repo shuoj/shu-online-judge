@@ -37,8 +37,16 @@ public final class RankingUserFactory {
     rankingUser.setTimeListAfter(timeCostListAfter);
     rankingUser.setTimeListBefore(timeCostListBefore);
 
-    rankingUser.setTotalTimeAfter(new TimeCost());
-    rankingUser.setTotalTimeBefore(new TimeCost());
+    TimeCost timeCostTotalAfter = new TimeCost();
+    timeCostTotalAfter.setRankingUser(rankingUser);
+    timeCostTotalAfter.setFrozen(false);
+    rankingUser.setTotalTimeAfter(timeCostTotalAfter);
+
+    TimeCost timeCostTotalBefore = new TimeCost();
+    timeCostTotalBefore.setRankingUser(rankingUser);
+    timeCostTotalAfter.setFrozen(true);
+    rankingUser.setTotalTimeBefore(timeCostTotalBefore);
+
 
     // process exclude rankingUser
     if (!ranking.getUserListExcluded().contains(user)) {

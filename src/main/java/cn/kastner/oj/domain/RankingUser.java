@@ -67,4 +67,21 @@ public class RankingUser {
     this.timeListAfter = new ArrayList<>();
     this.ranked = true;
   }
+
+  public void addAcceptCountBefore(Integer acceptCount) {
+    this.acceptCountBefore += acceptCount;
+  }
+
+  public void addSubmitCountBefore(Integer submitCount) {
+    this.submitCountBefore += submitCount;
+  }
+
+  public void addAcceptCountAfter(Integer acceptCount) {
+    this.acceptCountAfter += acceptCount;
+  }
+
+  public void addSubmitCountAfter(Integer submitCount) {
+    this.submitCountAfter += submitCount;
+  }
+
 }

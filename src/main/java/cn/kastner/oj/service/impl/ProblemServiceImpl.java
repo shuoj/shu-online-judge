@@ -312,6 +312,13 @@ public class ProblemServiceImpl implements ProblemService {
     Map<String, Object> testCaseInfo = new HashMap<>();
 
     List<File> fileList = CommonUtil.unzip(testcasePath);
+
+    if (problem.getSpecialJudged()) {
+      problem.setTestCaseCount(fileList.size());
+    } else {
+      problem.setTestCaseCount(fileList.size() / 2);
+    }
+
     File[] files = new File[fileList.size()];
     files = fileList.toArray(files);
     for (File file : files) {

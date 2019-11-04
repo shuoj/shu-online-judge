@@ -24,4 +24,6 @@ public class TimeCostDTO {
   private Boolean passed;
 
   private Boolean firstPassed;
+
+  private Double score;
 }
