@@ -74,7 +74,6 @@ public interface DTOMapper {
 
   @InheritInverseConfiguration
   @Mapping(target = "enable", ignore = true)
-  @Mapping(target = "visible", ignore = true)
   @Mapping(target = "createDate", ignore = true)
   @Mapping(target = "id", ignore = true)
   Contest dtoToEntity(ContestDTO contestDTO);
