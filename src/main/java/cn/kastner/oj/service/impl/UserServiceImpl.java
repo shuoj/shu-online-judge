@@ -262,7 +262,7 @@ public class UserServiceImpl implements UserService {
 
     for (int i = 0; i < quantity; i++) {
       String username = "g" + generateNum(group.getIdx().intValue()) + "#" + generateNum(i);
-      String password = encoder.encode(CommonUtil.generateStr(6));
+      String password = encoder.encode(username);
       String firstname = "临时";
       String lastname = "用户";
       String email = username + "@temp.com";
@@ -302,21 +302,24 @@ public class UserServiceImpl implements UserService {
       for (Row row : sheet) {
         row.getCell(0).setCellType(CellType.STRING);
         row.getCell(1).setCellType(CellType.STRING);
+        row.getCell(2).setCellType(CellType.STRING);
+
         if ("".equals(row.getCell(0).getStringCellValue())) {
           break;
         }
 
         if (index == 0) {
           if (!"学号".equals(row.getCell(0).getStringCellValue())
-              || !"姓名".equals(row.getCell(1).getStringCellValue())) {
+              || !"姓名".equals(row.getCell(1).getStringCellValue())
+              || !"密码".equals(row.getCell(2).getStringCellValue())) {
             throw new FileException(FileException.EXCEL_FORMAT_ERROR);
           }
           index++;
           continue;
         }
 
-        String username = "g" + generateNum(group.getIdx().intValue()) + "#" + generateNum(index);
-        String password = encoder.encode(username);
+        String username = "g" + generateNum(group.getIdx().intValue()) + "#" + row.getCell(0).getStringCellValue();
+        String password = encoder.encode(row.getCell(2).getStringCellValue());
         String studentNumber = row.getCell(0).getStringCellValue();
         String firstname = row.getCell(1).getStringCellValue();
         String email = username + "@acmoj.shu.edu.cn";
