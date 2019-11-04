@@ -41,4 +41,12 @@ public class TimeCost {
     this.firstPassed = false;
       this.frozen = false;
   }
+
+  public void addTotalTime(Long milliseconds) {
+    this.totalTime += milliseconds;
+  }
+
+  public void addErrorCount(Integer count) {
+    this.errorCount += count;
+  }
 }

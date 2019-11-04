@@ -79,4 +79,32 @@ public class ContestProblem {
     code = code * 30 + id.hashCode();
     return code;
   }
+
+  public void addAcceptCountBefore(Integer acceptCount) {
+    this.acceptCountBefore += acceptCount;
+  }
+
+  public void addSubmitCountBefore(Integer submitCount) {
+    this.submitCountBefore += submitCount;
+  }
+
+  public void addAcceptCountAfter(Integer acceptCount) {
+    this.acceptCountAfter += acceptCount;
+  }
+
+  public void addSubmitCountAfter(Integer submitCount) {
+    this.submitCountAfter += submitCount;
+  }
+
+  public void computeAcceptRateBefore() {
+    if (submitCountBefore != 0) {
+      acceptRateBefore = (double) acceptCountBefore / submitCountBefore;
+    }
+  }
+
+  public void computeAcceptRateAfter() {
+    if (submitCountAfter != 0) {
+      acceptRateAfter = (double) acceptCountAfter / submitCountAfter;
+    }
+  }
 }
