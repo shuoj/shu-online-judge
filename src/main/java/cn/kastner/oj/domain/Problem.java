@@ -20,7 +20,7 @@ public class Problem {
 
   @Id
   @Column(length = 40)
-  private String id;
+  private String id = UUID.randomUUID().toString();
 
   @Column(updatable = false, unique = true, nullable = false)
   private Long idx;
@@ -42,7 +42,7 @@ public class Problem {
   private Difficulty difficulty;
 
   private Double degreeOfDifficulty;
-  private Boolean visible;
+  private Boolean visible = true;
 
   @Fetch(FetchMode.SELECT)
   @ManyToMany(
@@ -52,7 +52,7 @@ public class Problem {
       name = "problem_tag",
       joinColumns = {@JoinColumn(name = "problem_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "tag_id", referencedColumnName = "id")})
-  private Set<Tag> tagList;
+  private Set<Tag> tagList = new HashSet<>();
 
   @Column(columnDefinition = "TEXT")
   private String inputDesc;
@@ -70,40 +70,25 @@ public class Problem {
   @JsonIgnore
   private List<Submission> submissionList;
 
-  private Boolean specialJudged;
+  private Boolean specialJudged = false;
 
   @Column(columnDefinition = "TEXT")
   private String testData;
 
   @Column(columnDefinition = "TEXT")
-  private String hint;
+  private String hint = "";
 
   @Column(length = 50)
-  private String source;
+  private String source = "";
 
-  private Integer averageAcceptTime;
-  private Integer acceptCount;
-  private Integer submitCount;
-  private Double acceptRate;
-  private LocalDateTime createDate;
-  private LocalDateTime lastUsedDate;
-  private LocalDateTime modifiedDate;
-
-  public Problem() {
-    this.id = UUID.randomUUID().toString();
-    this.visible = true;
-    this.tagList = new HashSet<>();
-    this.specialJudged = false;
-    this.hint = "";
-    this.source = "";
-    this.averageAcceptTime = 0;
-    this.acceptCount = 0;
-    this.submitCount = 0;
-    this.acceptRate = 0.0;
-    this.createDate = LocalDateTime.now();
-    this.lastUsedDate = LocalDateTime.now();
-    this.modifiedDate = LocalDateTime.now();
-  }
+  private Integer averageAcceptTime = 0;
+  private Integer acceptCount = 0;
+  private Integer submitCount = 0;
+  private Double acceptRate = 0.0;
+  private LocalDateTime createDate = LocalDateTime.now();
+  private LocalDateTime lastUsedDate = LocalDateTime.now();
+  private LocalDateTime modifiedDate = LocalDateTime.now();
+  private Integer testCaseCount = 0;
 
   @Override
   public boolean equals(Object o) {

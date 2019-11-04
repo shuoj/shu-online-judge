@@ -18,6 +18,9 @@ public interface TimeCostRepository
 
   List<TimeCost> findByRankingUserAndFrozen(RankingUser rankingUser, Boolean frozen);
 
+  List<TimeCost> findByRankingUserAndContestProblemIsNotNullAndFrozen(
+      RankingUser rankingUser, Boolean frozen);
+
   List<TimeCost> findByRankingUser(RankingUser rankingUser);
 
   void deleteByRankingUser(RankingUser rankingUser);

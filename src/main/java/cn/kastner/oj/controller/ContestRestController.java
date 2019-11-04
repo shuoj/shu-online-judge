@@ -12,6 +12,7 @@ import cn.kastner.oj.security.JwtUser;
 import cn.kastner.oj.service.ContestService;
 import cn.kastner.oj.util.NetResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -47,8 +48,8 @@ public class ContestRestController {
    * 获取比赛列表
    *
    * @param contestQuery name
-   * @param page         页数
-   * @param size         数量
+   * @param page 页数
+   * @param size 数量
    */
   @GetMapping
   public PageDTO<ContestDTO> getContests(
@@ -95,8 +96,9 @@ public class ContestRestController {
 
   @DeleteMapping("/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public void deleteContest(@PathVariable String id) throws AppException {
+  public ResponseEntity deleteContest(@PathVariable String id) throws AppException {
     contestService.delete(id);
+    return ResponseEntity.ok().build();
   }
 
   @GetMapping("/{id}/problems")
@@ -111,11 +113,20 @@ public class ContestRestController {
     return contestService.addProblems(problemIdList, id);
   }
 
+  @PostMapping("/{id}/problems/add")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
+  public ResponseEntity addProblem(
+      @RequestParam String problemId, @PathVariable String id, @RequestParam Integer score) throws AppException {
+    contestService.addProblem(problemId, id, score);
+    return ResponseEntity.ok().build();
+  }
+
   @DeleteMapping("/{id}/problems")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public List<ProblemDTO> deleteProblems(
-      @RequestBody List<String> problemIdList, @PathVariable String id) throws AppException {
-    return contestService.deleteProblems(problemIdList, id);
+  public ResponseEntity deleteProblems(@RequestBody List<String> problemIdList, @PathVariable String id)
+      throws AppException {
+    contestService.deleteProblems(problemIdList, id);
+    return ResponseEntity.ok().build();
   }
 
   @PostMapping(value = "/{id}/groups")

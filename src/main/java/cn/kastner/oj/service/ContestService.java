@@ -38,7 +38,9 @@ public interface ContestService {
   List<ProblemDTO> addProblems(List<String> problemIdList, String contestId)
       throws ContestException, ProblemException;
 
-  List<ProblemDTO> deleteProblems(List<String> problemIdList, String contestId)
+  void addProblem(String problemId, String contestId, Integer score) throws ContestException, ProblemException;
+
+  void deleteProblems(List<String> problemIdList, String contestId)
       throws ContestException;
 
   List<ProblemDTO> findAllProblems(String id) throws ContestException;

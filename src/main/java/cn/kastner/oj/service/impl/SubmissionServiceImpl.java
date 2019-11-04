@@ -174,7 +174,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         contestRepository
             .findById(submissionDTO.getContestId())
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
-
+    boolean isNOIP = contest.getJudgeType().equals(JudgeType.IMMEDIATELY);
     if (!CommonUtil.isAdmin(user)) {
       requireContestUser(contest, user);
       requireContestOnGoing(contest);
@@ -207,18 +207,20 @@ public class SubmissionServiceImpl implements SubmissionService {
     TimeCost timeCostAfter =
         timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
             rankingUser, contestProblem, false);
-
+    double score = contestProblem.getScore() * (double) judgeResult.getPassedCount() / judgeResult.getTotalCount();
     // if problem has been passed, the submission won't produce any effects on ranking
-    if (!timeCostAfter.getPassed()) {
+    if ((isNOIP && !timeCostAfter.getPassed()) || (!isNOIP && score > timeCostAfter.getScore())) {
 
       TimeCost timeCostTotalAfter =
           timeCostRepository.findByRankingUserAndContestProblemIsNullAndFrozen(rankingUser, false);
       timeCostTotalAfter.addTotalTime(duration);
+      timeCostTotalAfter.addScore(score - timeCostAfter.getScore());
 
       rankingUser.addSubmitCountAfter(1);
       contestProblem.addSubmitCountAfter(1);
       timeCostAfter.setTotalTime(duration);
       timeCostAfter.setSubmitted(true);
+      timeCostAfter.setScore(score);
       if (submission.getResult() == Result.ACCEPTED) {
         rankingUser.addAcceptCountAfter(1);
         contestProblem.addAcceptCountAfter(1);
@@ -248,12 +250,17 @@ public class SubmissionServiceImpl implements SubmissionService {
         TimeCost timeCost =
             timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
                 rankingUser, contestProblem, true);
-        timeCost.setTotalTime(duration);
-        timeCost.setSubmitted(true);
 
         TimeCost timeCostTotal =
             timeCostRepository.findByRankingUserAndContestProblemIsNullAndFrozen(rankingUser, true);
         timeCostTotal.addTotalTime(duration);
+        timeCostTotal.addScore(score - timeCost.getScore());
+
+        timeCost.setTotalTime(duration);
+        timeCost.setSubmitted(true);
+        timeCost.setScore(score);
+
+
 
         if (submission.getResult() == Result.ACCEPTED) {
 
@@ -283,6 +290,7 @@ public class SubmissionServiceImpl implements SubmissionService {
       rankingUserRepository.save(rankingUser);
       contestProblemRepository.save(contestProblem);
     }
+
     //    submissionCounter(submission, user);
     return mapper.entityToDTO(submissionRepository.save(submission));
   }
