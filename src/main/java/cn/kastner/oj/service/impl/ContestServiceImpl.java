@@ -363,6 +363,7 @@ public class ContestServiceImpl implements ContestService {
         contestProblemList.add(contestProblem);
         addedContestProblemList.add(contestProblem);
         problem.setVisible(false);
+        problem.setLastUsedDate(LocalDateTime.now());
         problemList.add(problem);
       }
     }
@@ -428,6 +429,7 @@ public class ContestServiceImpl implements ContestService {
       contestProblem.setContest(contest);
       contestProblem.setScore(score);
       problem.setVisible(false);
+      problem.setLastUsedDate(LocalDateTime.now());
       problemList.add(problem);
       contestProblemRepository.save(contestProblem);
       if (contest.getEnable()) {
