@@ -487,8 +487,25 @@ public class ContestServiceImpl implements ContestService {
     if (!CommonUtil.isAdmin(user) && ContestStatus.NOT_STARTED.equals(contest.getStatus())) {
       throw new ContestException(ContestException.CONTEST_NOT_GOING);
     }
-    List<Problem> problemList = getProblemList(contest);
-    return mapper.toProblemDTOs(problemList);
+    return mapper.toContestProblemDTOs(contest.getContestProblemSet());
+  }
+
+  @Override
+  public ProblemDTO findOneProblem(String contestId, String problemId) throws ContestException, ProblemException {
+    User user = UserContext.getCurrentUser();
+    Contest contest =
+        contestRepository
+            .findById(contestId)
+            .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
+    if (!CommonUtil.isAdmin(user) && ContestStatus.NOT_STARTED.equals(contest.getStatus())) {
+      throw new ContestException(ContestException.CONTEST_NOT_GOING);
+    }
+    Problem problem = problemRepository.findById(problemId).orElseThrow(
+        () -> new ProblemException(ProblemException.NO_SUCH_PROBLEM)
+    );
+    ContestProblem contestProblem =
+        contestProblemRepository.findByContestAndProblem(contest, problem);
+    return mapper.entityToDTO(contestProblem);
   }
 
   @Override

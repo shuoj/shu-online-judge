@@ -10,6 +10,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -40,6 +41,25 @@ public interface DTOMapper {
   @Mapping(target = "authorName", source = "author.username")
   @Mapping(target = "authorId", source = "author.id")
   ProblemDTO entityToDTO(Problem problem);
+
+  @Mapping(target = "authorName", source = "problem.author.name")
+  @Mapping(target = "acceptCount", source = "acceptCountAfter")
+  @Mapping(target = "submitCount", source = "submitCountAfter")
+  @Mapping(target = "acceptRate", source = "acceptRateAfter")
+  @Mapping(target = "title", source = "problem.title")
+  @Mapping(target = "description", source = "problem.description")
+  @Mapping(target = "timeLimit", source = "problem.timeLimit")
+  @Mapping(target = "ramLimit", source = "problem.ramLimit")
+  @Mapping(target = "difficulty", source = "problem.difficulty")
+  @Mapping(target = "tagList", source = "problem.tagList")
+  @Mapping(target = "inputDesc", source = "problem.inputDesc")
+  @Mapping(target = "outputDesc", source = "problem.outputDesc")
+  @Mapping(target = "sampleIO", source = "problem.sampleIO")
+  @Mapping(target = "hint", source = "problem.hint")
+  @Mapping(target = "source", source = "problem.source")
+  ProblemDTO entityToDTO(ContestProblem contestProblem);
+
+  List<ProblemDTO> toContestProblemDTOs(Collection<ContestProblem> contestProblems);
 
   List<ProblemDTO> toProblemDTOs(List<Problem> problems);
 
