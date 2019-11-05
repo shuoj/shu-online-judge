@@ -106,6 +106,11 @@ public class ContestRestController {
     return contestService.findAllProblems(id);
   }
 
+  @GetMapping("/{contestId}/problems/{problemId}")
+  public ProblemDTO getOneProblem(@PathVariable String contestId, @PathVariable String problemId) throws AppException {
+    return contestService.findOneProblem(contestId, problemId);
+  }
+
   @PostMapping("/{id}/problems")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<ProblemDTO> setProblems(

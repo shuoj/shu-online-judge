@@ -45,6 +45,8 @@ public interface ContestService {
 
   List<ProblemDTO> findAllProblems(String id) throws ContestException;
 
+  ProblemDTO findOneProblem(String contestId, String problemId) throws ContestException, ProblemException;
+
   ContestDTO setContestStatus(String id, ContestOption option) throws ContestException;
 
   Boolean joinContest(String id, String password) throws ContestException;

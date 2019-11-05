@@ -89,6 +89,11 @@ public class ProblemServiceImpl implements ProblemService {
                 criteriaBuilder.like(root.get("title").as(String.class), "%" + title + "%"));
           }
 
+          Long idx = problemQuery.getIdx();
+          if (null != idx) {
+            predicateList.add(criteriaBuilder.equal(root.get("idx").as(Long.class), idx));
+          }
+
           String tags = problemQuery.getTags();
           List<String> tagIdList = new ArrayList<>();
           List<Tag> tagList = new ArrayList<>();
