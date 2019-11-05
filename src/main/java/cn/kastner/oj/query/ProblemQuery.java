@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 @Data
 public class ProblemQuery {
 
+  private Long idx;
+
   private String authorName;
 
   private String title;
