@@ -2,6 +2,10 @@ package cn.kastner.oj.service.impl;
 
 import cn.kastner.oj.constant.EntityName;
 import cn.kastner.oj.domain.*;
+import cn.kastner.oj.domain.enums.ContestOption;
+import cn.kastner.oj.domain.enums.ContestStatus;
+import cn.kastner.oj.domain.enums.ContestType;
+import cn.kastner.oj.domain.enums.JudgeType;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.ContestDTO;
 import cn.kastner.oj.dto.PageDTO;

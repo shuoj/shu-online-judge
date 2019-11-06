@@ -1,6 +1,7 @@
 package cn.kastner.oj.repository;
 
 import cn.kastner.oj.domain.*;
+import cn.kastner.oj.domain.enums.Result;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

@@ -1,4 +1,4 @@
-package cn.kastner.oj.domain;
+package cn.kastner.oj.domain.enums;
 
 public enum ContestOption {
   ENABLE,

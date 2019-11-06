@@ -1,5 +1,6 @@
 package cn.kastner.oj.domain;
 
+import cn.kastner.oj.domain.enums.Difficulty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;

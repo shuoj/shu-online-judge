@@ -3,6 +3,7 @@ package cn.kastner.oj.service.impl;
 import cn.kastner.oj.constant.CommonConstant;
 import cn.kastner.oj.constant.LanguageConfig;
 import cn.kastner.oj.domain.*;
+import cn.kastner.oj.domain.enums.*;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.domain.stat.UserProblemStat;
 import cn.kastner.oj.domain.stat.UserTagStat;

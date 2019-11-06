@@ -1,5 +1,8 @@
 package cn.kastner.oj.domain;
 
+import cn.kastner.oj.domain.enums.ContestStatus;
+import cn.kastner.oj.domain.enums.ContestType;
+import cn.kastner.oj.domain.enums.JudgeType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;

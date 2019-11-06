@@ -2,6 +2,7 @@ package cn.kastner.oj.service.impl;
 
 import cn.kastner.oj.constant.EntityName;
 import cn.kastner.oj.domain.*;
+import cn.kastner.oj.domain.enums.Difficulty;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.ProblemDTO;

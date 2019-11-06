@@ -1,5 +1,6 @@
 package cn.kastner.oj.domain;
 
+import cn.kastner.oj.domain.enums.Result;
 import lombok.Data;
 
 @Data

@@ -1,6 +1,6 @@
 package cn.kastner.oj.service;
 
-import cn.kastner.oj.domain.ContestOption;
+import cn.kastner.oj.domain.enums.ContestOption;
 import cn.kastner.oj.dto.ContestDTO;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.ProblemDTO;

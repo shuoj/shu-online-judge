@@ -1,6 +1,6 @@
 package cn.kastner.oj.query;
 
-import cn.kastner.oj.domain.Language;
+import cn.kastner.oj.domain.enums.Language;
 import lombok.Data;
 
 @Data
