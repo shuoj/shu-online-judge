@@ -14,7 +14,7 @@ public class TimeCost {
   @Column(length = 40)
   private String id = UUID.randomUUID().toString();
 
-  @OneToOne
+  @ManyToOne
   private ContestProblem contestProblem;
 
   private Long totalTime = 0L;
@@ -38,8 +38,8 @@ public class TimeCost {
     this.totalTime += milliseconds;
   }
 
-  public void addErrorCount(Integer count) {
-    this.errorCount += count;
+  public void increaseErrorCount() {
+    this.errorCount++;
   }
 
   public void addScore(Double score) {

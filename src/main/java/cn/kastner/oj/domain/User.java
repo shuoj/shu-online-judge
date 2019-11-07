@@ -82,6 +82,7 @@ public class User {
       name = "user_authority",
       joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "authority_id", referencedColumnName = "id")})
+  @JsonIgnore
   private List<Authority> authorities;
 
   @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
@@ -137,7 +138,7 @@ public class User {
   @ManyToMany(mappedBy = "userListExcluded", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
-  private List<Ranking> rankingList;
+  private List<Contest> contestListExcluded;
 
   @OneToMany(mappedBy = "user")
   @JsonIgnore

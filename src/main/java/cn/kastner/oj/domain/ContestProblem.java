@@ -1,8 +1,13 @@
 package cn.kastner.oj.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -22,26 +27,22 @@ public class ContestProblem {
   @JoinColumn(name = "problem_id")
   private Problem problem;
 
-  private Integer acceptCountBefore = 0;
+  private Integer acceptCount = 0;
 
-  private Integer submitCountBefore = 0;
+  private Integer submitCount = 0;
 
-  private Double acceptRateBefore = 0.0;
-
-  private Integer acceptCountAfter = 0;
-
-  private Integer submitCountAfter = 0;
-
-  private Double acceptRateAfter = 0.0;
+  private Double acceptRate = 0.0;
 
   private Integer score = 0;
 
-  @OneToOne(cascade = CascadeType.ALL)
-  private TimeCost timeListAfter;
+  @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "contestProblem")
+  @Fetch(FetchMode.SUBSELECT)
+  @OrderBy("id DESC ")
+  @JsonIgnore
+  private List<TimeCost> timeList = new ArrayList<>();
 
   @OneToOne
   private Submission firstSubmission;
-
 
   public String getContestId() {
     return this.contest.getId();
@@ -73,31 +74,17 @@ public class ContestProblem {
     return code;
   }
 
-  public void addAcceptCountBefore(Integer acceptCount) {
-    this.acceptCountBefore += acceptCount;
+  public void increaseAcceptCount() {
+    this.acceptCount++;
   }
 
-  public void addSubmitCountBefore(Integer submitCount) {
-    this.submitCountBefore += submitCount;
+  public void increaseSubmitCount() {
+    this.submitCount++;
   }
 
-  public void addAcceptCountAfter(Integer acceptCount) {
-    this.acceptCountAfter += acceptCount;
-  }
-
-  public void addSubmitCountAfter(Integer submitCount) {
-    this.submitCountAfter += submitCount;
-  }
-
-  public void computeAcceptRateBefore() {
-    if (submitCountBefore != 0) {
-      acceptRateBefore = (double) acceptCountBefore / submitCountBefore;
-    }
-  }
-
-  public void computeAcceptRateAfter() {
-    if (submitCountAfter != 0) {
-      acceptRateAfter = (double) acceptCountAfter / submitCountAfter;
+  public void computeAcceptRate() {
+    if (submitCount != 0) {
+      acceptRate = (double) acceptCount / submitCount;
     }
   }
 }

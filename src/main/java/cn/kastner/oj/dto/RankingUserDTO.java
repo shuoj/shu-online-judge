@@ -17,11 +17,15 @@ public class RankingUserDTO {
 
   private Integer submitCount;
 
-  private TimeCostDTO totalTime;
+  private Integer passedCount;
+
+  private Integer errorCount;
+
+  private Long time;
 
   private List<TimeCostDTO> timeList;
 
   private Boolean ranked;
 
-  private Long rank;
+  private Integer rankingNumber;
 }

@@ -11,10 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Data
 @Entity
@@ -23,7 +20,7 @@ public class Contest {
 
   @Id
   @Column(length = 40)
-  private String id;
+  private String id = UUID.randomUUID().toString();
 
   @Column(updatable = false, unique = true, nullable = false)
   private Long idx;
@@ -41,15 +38,12 @@ public class Contest {
   private String password;
 
   @Enumerated(EnumType.STRING)
-  private ContestType contestType;
+  private ContestType contestType = ContestType.PUBLIC;
 
   @Enumerated(EnumType.STRING)
-  private JudgeType judgeType;
+  private JudgeType judgeType = JudgeType.IMMEDIATELY;
 
-  @OneToOne(cascade = CascadeType.ALL)
-  private Ranking ranking;
-
-  private Boolean realTimeRank;
+  private Boolean realTimeRank = true;
   private LocalDateTime startDate;
   private LocalDateTime endDate;
   private LocalDateTime createDate;
@@ -61,7 +55,7 @@ public class Contest {
 
   @OneToMany(mappedBy = "contest")
   @JsonIgnore
-  private Set<ContestProblem> contestProblemSet;
+  private Set<ContestProblem> contestProblemSet = new HashSet<>();
 
   @OneToMany(mappedBy = "contest")
   @JsonIgnore
@@ -73,29 +67,34 @@ public class Contest {
       name = "contest_user",
       joinColumns = {@JoinColumn(name = "contest_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")})
-  private Set<User> userSet;
+  @JsonIgnore
+  private Set<User> userSet = new HashSet<>();
 
-  private Boolean frozen;
-  private Boolean enable;
-  private Boolean visible;
+  @OneToMany(
+      mappedBy = "contest",
+      fetch = FetchType.LAZY,
+      cascade = {CascadeType.ALL})
+  @Fetch(FetchMode.SUBSELECT)
+  @JsonIgnore
+  private List<RankingUser> rankingUserList = new ArrayList<>();
+
+  @Fetch(FetchMode.SUBSELECT)
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+      name = "contest_excluded_user",
+      joinColumns = {@JoinColumn(name = "contest_id", referencedColumnName = "id")},
+      inverseJoinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")})
+  @JsonIgnore
+  private Set<User> userListExcluded = new HashSet<>();
+
+  private Boolean frozen = false;
+  private Boolean enable = false;
+  private Boolean visible = false;
 
   @Enumerated(EnumType.STRING)
-  private ContestStatus status;
+  private ContestStatus status = ContestStatus.NOT_STARTED;
 
-  private Boolean couldShare;
-
-  public Contest() {
-    this.id = UUID.randomUUID().toString();
-    this.contestType = ContestType.PUBLIC;
-    this.judgeType = JudgeType.IMMEDIATELY;
-    this.realTimeRank = true;
-    this.contestProblemSet = new HashSet<>();
-    this.userSet = new HashSet<>();
-    this.visible = false;
-    this.enable = false;
-    this.status = ContestStatus.NOT_STARTED;
-    this.couldShare = true;
-  }
+  private Boolean couldShare = true;
 
   public void setPassword(String password) {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();

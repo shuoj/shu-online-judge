@@ -1,5 +1,6 @@
 package cn.kastner.oj.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -16,72 +17,59 @@ public class RankingUser {
 
   @Id
   @Column(length = 40)
-  private String id;
+  private String id = UUID.randomUUID().toString();
 
   @ManyToOne
   @JoinColumn(name = "user_id")
   private User user;
 
   @ManyToOne
-  @JoinColumn(name = "ranking_id")
-  private Ranking ranking;
+  @JoinColumn(name = "contest_id")
+  private Contest contest;
 
-  private Integer acceptCountBefore;
+  private Integer passedCount = 0;
 
-  private Integer submitCountBefore;
+  private Integer acceptCount = 0;
 
-  @OneToOne(cascade = {CascadeType.ALL})
-  private TimeCost totalTimeBefore;
+  private Integer submitCount = 0;
 
-  @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+  private Integer errorCount = 0;
+
+  private Double score = 0.0;
+
+  private Long time = 0L;
+
+  @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "rankingUser")
   @Fetch(FetchMode.SUBSELECT)
-  @JoinTable(name = "time_cost_before")
   @OrderBy("id DESC ")
-  private List<TimeCost> timeListBefore;
+  @JsonIgnore
+  private List<TimeCost> timeList = new ArrayList<>();
 
-  private Integer acceptCountAfter;
+  private Boolean ranked = true;
 
-  private Integer submitCountAfter;
+  private Integer rankingNumber;
 
-  @OneToOne(cascade = {CascadeType.ALL})
-  private TimeCost totalTimeAfter;
-
-  @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-  @Fetch(FetchMode.SUBSELECT)
-  @JoinTable(name = "time_cost_after")
-  @OrderBy("id DESC ")
-  private List<TimeCost> timeListAfter;
-
-  private Boolean ranked;
-  private Long rankingNumber;
-
-  public RankingUser() {
-    this.id = UUID.randomUUID().toString();
-    this.acceptCountBefore = 0;
-    this.submitCountBefore = 0;
-    this.totalTimeBefore = new TimeCost();
-    this.timeListBefore = new ArrayList<>();
-    this.acceptCountAfter = 0;
-    this.submitCountAfter = 0;
-    this.totalTimeAfter = new TimeCost();
-    this.timeListAfter = new ArrayList<>();
-    this.ranked = true;
+  public void increasePassedCount() {
+    this.passedCount++;
   }
 
-  public void addAcceptCountBefore(Integer acceptCount) {
-    this.acceptCountBefore += acceptCount;
+  public void increaseAcceptCount() {
+    this.acceptCount++;
   }
 
-  public void addSubmitCountBefore(Integer submitCount) {
-    this.submitCountBefore += submitCount;
+  public void increaseSubmitCount() {
+    this.submitCount++;
   }
 
-  public void addAcceptCountAfter(Integer acceptCount) {
-    this.acceptCountAfter += acceptCount;
+  public void increaseErrorCount() {
+    this.errorCount++;
   }
 
-  public void addSubmitCountAfter(Integer submitCount) {
-    this.submitCountAfter += submitCount;
+  public void addTime(Long milliseconds) {
+    this.time += milliseconds;
   }
 
+  public void addScore(Double score) {
+    this.score += score;
+  }
 }

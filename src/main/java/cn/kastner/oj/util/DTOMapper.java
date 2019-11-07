@@ -4,12 +4,10 @@ import cn.kastner.oj.domain.*;
 import cn.kastner.oj.domain.log.AuthLog;
 import cn.kastner.oj.domain.security.SecurityQuestion;
 import cn.kastner.oj.dto.*;
-import org.mapstruct.Context;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -43,9 +41,6 @@ public interface DTOMapper {
   ProblemDTO entityToDTO(Problem problem);
 
   @Mapping(target = "authorName", source = "problem.author.name")
-  @Mapping(target = "acceptCount", source = "acceptCountAfter")
-  @Mapping(target = "submitCount", source = "submitCountAfter")
-  @Mapping(target = "acceptRate", source = "acceptRateAfter")
   @Mapping(target = "title", source = "problem.title")
   @Mapping(target = "description", source = "problem.description")
   @Mapping(target = "timeLimit", source = "problem.timeLimit")
@@ -119,53 +114,20 @@ public interface DTOMapper {
   @Mapping(target = "id", ignore = true)
   Group dtoToEntity(GroupDTO groupDTO);
 
-  @Mapping(target = "contestId", source = "contest.id")
-  @Mapping(target = "contestName", source = "contest.name")
-  RankingDTO entityToDTO(Ranking ranking, @Context Boolean frozen);
+  @Mapping(target = "contestId", source = "id")
+  @Mapping(target = "contestName", source = "name")
+  RankingDTO contestToRankingDTO(Contest contest);
 
-  @InheritInverseConfiguration
-  @Mapping(target = "id", ignore = true)
-  Ranking dtoToEntity(RankingDTO rankingDTO);
 
-  default RankingUserDTO entityToDTO(RankingUser rankingUser, @Context Boolean frozen) {
-    if (rankingUser == null) {
-      return null;
-    }
+  @Mapping(target = "userName", source = "user.username")
+  @Mapping(target = "userId", source = "user.id")
+  RankingUserDTO entityToDTO(RankingUser rankingUser);
 
-    RankingUserDTO rankingUserDTO = new RankingUserDTO();
-    rankingUserDTO.setRanked(rankingUser.getRanked());
-    rankingUserDTO.setId(rankingUser.getId());
-    rankingUserDTO.setUserId(rankingUser.getUser().getId());
-    rankingUserDTO.setUserName(rankingUser.getUser().getUsername());
-    rankingUserDTO.setRank(rankingUser.getRankingNumber());
-    if (frozen) {
-      rankingUserDTO.setAcceptCount(rankingUser.getAcceptCountBefore());
-      rankingUserDTO.setSubmitCount(rankingUser.getSubmitCountBefore());
-      rankingUserDTO.setTotalTime(entityToDTO(rankingUser.getTotalTimeBefore()));
-      List<TimeCostDTO> timeCostDTOList = new ArrayList<>();
-      for (TimeCost timeCost : rankingUser.getTimeListBefore()) {
-        timeCostDTOList.add(entityToDTO(timeCost));
-      }
-      rankingUserDTO.setTimeList(timeCostDTOList);
-      return rankingUserDTO;
-    } else {
-      rankingUserDTO.setAcceptCount(rankingUser.getAcceptCountAfter());
-      rankingUserDTO.setSubmitCount(rankingUser.getSubmitCountAfter());
-      rankingUserDTO.setTotalTime(entityToDTO(rankingUser.getTotalTimeAfter()));
-      List<TimeCostDTO> timeCostDTOList = new ArrayList<>();
-      for (TimeCost timeCost : rankingUser.getTimeListAfter()) {
-        timeCostDTOList.add(entityToDTO(timeCost));
-      }
-      rankingUserDTO.setTimeList(timeCostDTOList);
-      return rankingUserDTO;
-    }
-  }
+  List<RankingUserDTO> toRankingUserDTOs(List<RankingUser> rankingUserList);
 
-  @Mapping(target = "contestId", source = "contestProblem.contest.id")
-  @Mapping(target = "problemId", source = "contestProblem.problem.id")
-  @Mapping(target = "userId", source = "rankingUser.user.id")
-  @Mapping(target = "userName", source = "rankingUser.user.username")
   TimeCostDTO entityToDTO(TimeCost timeCost);
+
+  List<TimeCostDTO> toTimeCostDTOs(List<TimeCost> timeCostList);
 
   @Mapping(target = "authorName", source = "author.username")
   @Mapping(target = "contestId", source = "contest.id")

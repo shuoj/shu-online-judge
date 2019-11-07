@@ -1,4 +1,4 @@
-package cn.kastner.oj.domain;
+package cn.kastner.oj.domain.pojos;
 
 import cn.kastner.oj.domain.enums.Result;
 import lombok.Data;

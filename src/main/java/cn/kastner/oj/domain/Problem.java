@@ -53,6 +53,7 @@ public class Problem {
       name = "problem_tag",
       joinColumns = {@JoinColumn(name = "problem_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "tag_id", referencedColumnName = "id")})
+  @JsonIgnore
   private Set<Tag> tagList = new HashSet<>();
 
   @Column(columnDefinition = "TEXT")

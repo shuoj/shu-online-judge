@@ -7,10 +7,7 @@ import cn.kastner.oj.domain.enums.ContestStatus;
 import cn.kastner.oj.domain.enums.ContestType;
 import cn.kastner.oj.domain.enums.JudgeType;
 import cn.kastner.oj.domain.security.UserContext;
-import cn.kastner.oj.dto.ContestDTO;
-import cn.kastner.oj.dto.PageDTO;
-import cn.kastner.oj.dto.ProblemDTO;
-import cn.kastner.oj.dto.RankingDTO;
+import cn.kastner.oj.dto.*;
 import cn.kastner.oj.exception.ContestException;
 import cn.kastner.oj.exception.ProblemException;
 import cn.kastner.oj.factory.RankingUserFactory;
@@ -26,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -53,11 +51,13 @@ public class ContestServiceImpl implements ContestService {
 
   private final RankingUserRepository rankingUserRepository;
 
-  private final RankingRepository rankingRepository;
-
   private final GroupRepository groupRepository;
 
   private final IndexSequenceRepository indexSequenceRepository;
+
+  private final SubmissionRepository submissionRepository;
+
+  private final RedisTemplate redisTemplate;
 
   private final DTOMapper mapper;
 
@@ -69,8 +69,9 @@ public class ContestServiceImpl implements ContestService {
       UserRepository userRepository,
       ContestProblemRepository contestProblemRepository,
       RankingUserRepository rankingUserRepository,
-      RankingRepository rankingRepository, GroupRepository groupRepository,
+      GroupRepository groupRepository,
       IndexSequenceRepository indexSequenceRepository,
+      SubmissionRepository submissionRepository, RedisTemplate redisTemplate,
       DTOMapper mapper) {
     this.contestRepository = contestRepository;
     this.timeCostRepository = timeCostRepository;
@@ -78,9 +79,10 @@ public class ContestServiceImpl implements ContestService {
     this.userRepository = userRepository;
     this.contestProblemRepository = contestProblemRepository;
     this.rankingUserRepository = rankingUserRepository;
-    this.rankingRepository = rankingRepository;
     this.groupRepository = groupRepository;
     this.indexSequenceRepository = indexSequenceRepository;
+    this.submissionRepository = submissionRepository;
+    this.redisTemplate = redisTemplate;
     this.mapper = mapper;
   }
 
@@ -109,9 +111,6 @@ public class ContestServiceImpl implements ContestService {
 
     contest.setCreateDate(LocalDateTime.now());
     contest.setAuthor(user);
-    Ranking ranking = new Ranking();
-    ranking.setContest(contest);
-    contest.setRanking(ranking);
     IndexSequence sequence = indexSequenceRepository.findByName(EntityName.CONTEST);
     contest.setIdx(sequence.getNextIdx());
     ContestDTO dto = mapper.entityToDTO(contestRepository.save(contest));
@@ -126,13 +125,11 @@ public class ContestServiceImpl implements ContestService {
         contestRepository
             .findById(id)
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
-    Ranking ranking = rankingRepository.findByContest(contest);
-    List<RankingUser> rankingUserList = rankingUserRepository.findByRanking(ranking);
+    List<RankingUser> rankingUserList = rankingUserRepository.findByContest(contest);
     for (RankingUser rankingUser : rankingUserList) {
       timeCostRepository.deleteByRankingUser(rankingUser);
     }
     rankingUserRepository.deleteAll(rankingUserList);
-    rankingRepository.delete(ranking);
     contestProblemRepository.deleteAllByContest(contest);
     contestRepository.delete(contest);
   }
@@ -152,7 +149,8 @@ public class ContestServiceImpl implements ContestService {
     if (!ContestStatus.PROCESSING.equals(contest.getStatus())) {
       if (null != contestDTO.getName()) {
         Optional<Contest> contestOptional = contestRepository.findByName(contestDTO.getName());
-        if (contestOptional.isPresent() && !contestOptional.get().getId().equals(contestDTO.getId())) {
+        if (contestOptional.isPresent()
+            && !contestOptional.get().getId().equals(contestDTO.getId())) {
           throw new ContestException(ContestException.HAVE_SAME_NAME_CONTEST);
         }
         contest.setName(contestDTO.getName());
@@ -374,44 +372,33 @@ public class ContestServiceImpl implements ContestService {
     contestProblemRepository.saveAll(contestProblemList);
 
     if (contest.getEnable() && !addedContestProblemList.isEmpty()) {
-      Ranking ranking = contest.getRanking();
-      List<RankingUser> rankingUserList = ranking.getRankingUserList();
+      List<RankingUser> rankingUserList = contest.getRankingUserList();
       for (RankingUser rankingUser : rankingUserList) {
-        List<TimeCost> timeListBefore = rankingUser.getTimeListBefore();
-        List<TimeCost> timeListAfter = rankingUser.getTimeListAfter();
-        List<TimeCost> addTimeCostListBefore = new ArrayList<>();
-        List<TimeCost> addTimeCostListAfter = new ArrayList<>();
+        List<TimeCost> timeCostList = rankingUser.getTimeList();
+        List<TimeCost> addTimeCostList = new ArrayList<>();
         for (ContestProblem contestProblem : addedContestProblemList) {
 
-          TimeCost timeCostBefore = new TimeCost();
-          timeCostBefore.setContestProblem(contestProblem);
-          timeCostBefore.setRankingUser(rankingUser);
-          timeCostBefore.setFrozen(true);
-          addTimeCostListBefore.add(timeCostBefore);
-
-          TimeCost timeCostAfter = new TimeCost();
-          timeCostAfter.setContestProblem(contestProblem);
-          timeCostAfter.setRankingUser(rankingUser);
-          timeCostAfter.setFrozen(false);
-          addTimeCostListAfter.add(timeCostAfter);
-
+          TimeCost timeCost = new TimeCost();
+          timeCost.setContestProblem(contestProblem);
+          timeCost.setRankingUser(rankingUser);
+          timeCost.setFrozen(true);
+          addTimeCostList.add(timeCost);
         }
 
-        timeListBefore.addAll(timeCostRepository.saveAll(addTimeCostListBefore));
-        timeListAfter.addAll(timeCostRepository.saveAll(addTimeCostListAfter));
+        timeCostList.addAll(timeCostRepository.saveAll(addTimeCostList));
 
-        rankingUser.setTimeListAfter(timeListAfter);
-        rankingUser.setTimeListBefore(timeListBefore);
+        rankingUser.setTimeList(timeCostList);
       }
-      ranking.setRankingUserList(rankingUserRepository.saveAll(rankingUserList));
-      rankingRepository.save(ranking);
+      contest.setRankingUserList(rankingUserRepository.saveAll(rankingUserList));
+      contestRepository.save(contest);
     }
 
     return mapper.toProblemDTOs(problemList);
   }
 
   @Override
-  public void addProblem(String problemId, String contestId, Integer score) throws ContestException, ProblemException {
+  public void addProblem(String problemId, String contestId, Integer score)
+      throws ContestException, ProblemException {
     Contest contest =
         contestRepository
             .findById(contestId)
@@ -437,41 +424,30 @@ public class ContestServiceImpl implements ContestService {
       problemList.add(problem);
       contestProblemRepository.save(contestProblem);
       if (contest.getEnable()) {
-        Ranking ranking = contest.getRanking();
-        List<RankingUser> rankingUserList = ranking.getRankingUserList();
+        List<RankingUser> rankingUserList = contest.getRankingUserList();
         for (RankingUser rankingUser : rankingUserList) {
-          List<TimeCost> timeListBefore = rankingUser.getTimeListBefore();
-          List<TimeCost> timeListAfter = rankingUser.getTimeListAfter();
-          List<TimeCost> addTimeCostListBefore = new ArrayList<>();
-          List<TimeCost> addTimeCostListAfter = new ArrayList<>();
-          TimeCost timeCostBefore = new TimeCost();
-          timeCostBefore.setContestProblem(contestProblem);
-          timeCostBefore.setRankingUser(rankingUser);
-          timeCostBefore.setFrozen(true);
-          addTimeCostListBefore.add(timeCostBefore);
+          List<TimeCost> timelist = rankingUser.getTimeList();
+          List<TimeCost> addTimeCostList = new ArrayList<>();
 
-          TimeCost timeCostAfter = new TimeCost();
-          timeCostAfter.setContestProblem(contestProblem);
-          timeCostAfter.setRankingUser(rankingUser);
-          timeCostAfter.setFrozen(false);
-          addTimeCostListAfter.add(timeCostAfter);
+          TimeCost timeCost = new TimeCost();
+          timeCost.setContestProblem(contestProblem);
+          timeCost.setRankingUser(rankingUser);
+          timeCost.setFrozen(true);
 
-          timeListBefore.addAll(timeCostRepository.saveAll(addTimeCostListBefore));
-          timeListAfter.addAll(timeCostRepository.saveAll(addTimeCostListAfter));
+          addTimeCostList.add(timeCost);
 
-          rankingUser.setTimeListAfter(timeListAfter);
-          rankingUser.setTimeListBefore(timeListBefore);
+          timelist.addAll(timeCostRepository.saveAll(addTimeCostList));
+
+          rankingUser.setTimeList(timelist);
         }
-        ranking.setRankingUserList(rankingUserRepository.saveAll(rankingUserList));
-        rankingRepository.save(ranking);
+        contest.setRankingUserList(rankingUserRepository.saveAll(rankingUserList));
+        contestRepository.save(contest);
       }
     }
-
   }
 
   @Override
-  public void deleteProblems(List<String> problemIdList, String contestId)
-      throws ContestException {
+  public void deleteProblems(List<String> problemIdList, String contestId) throws ContestException {
 
     Contest contest =
         contestRepository
@@ -497,7 +473,8 @@ public class ContestServiceImpl implements ContestService {
   }
 
   @Override
-  public ProblemDTO findOneProblem(String contestId, String problemId) throws ContestException, ProblemException {
+  public ProblemDTO findOneProblem(String contestId, String problemId)
+      throws ContestException, ProblemException {
     User user = UserContext.getCurrentUser();
     Contest contest =
         contestRepository
@@ -506,9 +483,10 @@ public class ContestServiceImpl implements ContestService {
     if (!CommonUtil.isAdmin(user) && ContestStatus.NOT_STARTED.equals(contest.getStatus())) {
       throw new ContestException(ContestException.CONTEST_NOT_GOING);
     }
-    Problem problem = problemRepository.findById(problemId).orElseThrow(
-        () -> new ProblemException(ProblemException.NO_SUCH_PROBLEM)
-    );
+    Problem problem =
+        problemRepository
+            .findById(problemId)
+            .orElseThrow(() -> new ProblemException(ProblemException.NO_SUCH_PROBLEM));
     ContestProblem contestProblem =
         contestProblemRepository.findByContestAndProblem(contest, problem);
     return mapper.entityToDTO(contestProblem);
@@ -534,35 +512,41 @@ public class ContestServiceImpl implements ContestService {
         break;
       default:
     }
-    return mapper.entityToDTO(contestRepository.save(contest));
+    return mapper.entityToDTO(contest);
   }
 
   private void setContestStatus(Contest contest, ContestStatus status) {
-    Ranking ranking = contest.getRanking();
     switch (status) {
       case NOT_STARTED:
         contest.setStatus(ContestStatus.NOT_STARTED);
         contest.setEnable(false);
-        rankingUserRepository.deleteAll(rankingUserRepository.findByRanking(ranking));
-        contest.setRanking(ranking);
+        contestRepository.save(contest);
+        rankingUserRepository.deleteAllByContest(contest);
+        submissionRepository.deleteAllByContest(contest);
         break;
       case PROCESSING:
+        boolean needClean = contest.getStatus() == ContestStatus.ENDED;
         contest.setStatus(ContestStatus.PROCESSING);
         contest.setEnable(true);
         contest.setStartDate(LocalDateTime.now());
-        rankingUserRepository.deleteAll(rankingUserRepository.findByRanking(ranking));
+        contestRepository.save(contest);
+        if (needClean) {
+          rankingUserRepository.deleteAllByContest(contest);
+          submissionRepository.deleteAllByContest(contest);
+        }
         // initialize rankingUserList
         List<RankingUser> rankingUserList = new ArrayList<>();
         for (User user : contest.getUserSet()) {
           RankingUser rankingUser = RankingUserFactory.create(user, contest);
           rankingUserList.add(rankingUser);
         }
-        ranking.setRankingUserList(rankingUserList);
+        rankingUserRepository.saveAll(rankingUserList);
         break;
       case ENDED:
         contest.setEnable(false);
         contest.setStatus(ContestStatus.ENDED);
         setProblemsVisible(contest);
+        contestRepository.save(contest);
         break;
       default:
     }
@@ -608,19 +592,17 @@ public class ContestServiceImpl implements ContestService {
         }
         break;
       default:
-
     }
 
     return result;
   }
 
   private void addUserToRanking(Contest contest, User user) {
-    Ranking ranking = contest.getRanking();
-    List<RankingUser> rankingUserList = ranking.getRankingUserList();
+    List<RankingUser> rankingUserList = contest.getRankingUserList();
     RankingUser rankingUser = RankingUserFactory.create(user, contest);
     rankingUserList.add(rankingUserRepository.save(rankingUser));
-    ranking.setRankingUserList(rankingUserList);
-    rankingRepository.save(ranking);
+    contest.setRankingUserList(rankingUserList);
+    contestRepository.save(contest);
   }
 
   @Override
@@ -630,18 +612,31 @@ public class ContestServiceImpl implements ContestService {
       throw new ContestException(ContestException.NO_SUCH_CONTEST);
     }
     Contest contest = contestOptional.get();
-    Ranking ranking = contest.getRanking();
-    List<RankingUser> rankingUserList = rankingUserRepository.findByRanking(ranking);
-    for (RankingUser ru : rankingUserList) {
-      if (LocalDateTime.now().isBefore(contest.getEndDate())) {
-        ru.setTimeListBefore(timeCostRepository.findByRankingUserAndContestProblemIsNotNullAndFrozen(ru, true));
-      } else {
-        ru.setTimeListAfter(timeCostRepository.findByRankingUserAndContestProblemIsNotNullAndFrozen(ru, true));
+    RankingDTO rankingDTO = new RankingDTO();
+    rankingDTO.setContestId(contest.getId());
+    rankingDTO.setContestName(contest.getName());
+    if (contest.getStatus() == ContestStatus.PROCESSING) {
+      List<RankingUserDTO> rankingUserList =
+          (List<RankingUserDTO>) redisTemplate.opsForValue().get("rankingUserList:" + contest.getId());
+      for (RankingUserDTO rankingUserDTO :
+          rankingUserList == null ? new ArrayList<RankingUserDTO>() : rankingUserList) {
+        rankingUserDTO.setTimeList(
+            (List<TimeCostDTO>)
+                redisTemplate.opsForValue().get("timeCostList:" + rankingUserDTO.getId()));
       }
+      rankingDTO.setRankingUserList(rankingUserList);
+      return rankingDTO;
+    } else if (contest.getStatus() == ContestStatus.ENDED) {
+      List<RankingUser> rankingUserList = rankingUserRepository.findByContest(contest);
+      for (RankingUser ru : rankingUserList) {
+        ru.setTimeList(timeCostRepository.findByRankingUser(ru));
+      }
+      contest.setRankingUserList(rankingUserList);
+      return mapper.contestToRankingDTO(contest);
+    } else {
+      throw new ContestException(ContestException.CONTEST_NOT_GOING);
     }
-    ranking.setRankingUserList(rankingUserList);
 
-    return mapper.entityToDTO(ranking, LocalDateTime.now().isBefore(contest.getEndDate()));
   }
 
   private void requirePassword(Contest contest) throws ContestException {

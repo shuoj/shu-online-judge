@@ -4,6 +4,8 @@ import cn.kastner.oj.constant.CommonConstant;
 import cn.kastner.oj.constant.LanguageConfig;
 import cn.kastner.oj.domain.*;
 import cn.kastner.oj.domain.enums.*;
+import cn.kastner.oj.domain.pojos.JudgeResponse;
+import cn.kastner.oj.domain.pojos.JudgeResult;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.domain.stat.UserProblemStat;
 import cn.kastner.oj.domain.stat.UserTagStat;
@@ -200,101 +202,60 @@ public class SubmissionServiceImpl implements SubmissionService {
     submission.setMemory(judgeResult.getMemory());
     submissionRepository.save(submission);
 
-    ContestProblem contestProblem =
-        contestProblemRepository.findByContestAndProblem(contest, problem);
-    Ranking ranking = contest.getRanking();
-    RankingUser rankingUser = rankingUserRepository.findByRankingAndUser(ranking, user);
+    ContestProblem contestProblem = contestProblemRepository.findByContestAndProblem(contest, problem);
+    RankingUser rankingUser = rankingUserRepository.findByContestAndUser(contest, user);
 
-    TimeCost timeCostAfter =
-        timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
-            rankingUser, contestProblem, false);
-    double score = contestProblem.getScore() * (double) judgeResult.getPassedCount() / judgeResult.getTotalCount();
+    TimeCost timeCost = timeCostRepository.findByRankingUserAndContestProblem(rankingUser, contestProblem);
+
+    double score = 0.0;
+
+    if (!isNOIP) {
+      score = contestProblem.getScore() * (double) judgeResult.getPassedCount() / judgeResult.getTotalCount();
+    }
+
     // if problem has been passed, the submission won't produce any effects on ranking
-    if ((isNOIP && !timeCostAfter.getPassed()) || (!isNOIP && score > timeCostAfter.getScore())) {
+    if ((isNOIP && !timeCost.getPassed()) || (!isNOIP && score > timeCost.getScore())) {
 
-      TimeCost timeCostTotalAfter =
-          timeCostRepository.findByRankingUserAndContestProblemIsNullAndFrozen(rankingUser, false);
-      timeCostTotalAfter.addTotalTime(duration);
-      timeCostTotalAfter.addScore(score - timeCostAfter.getScore());
+      rankingUser.addTime(duration);
+      rankingUser.increaseSubmitCount();
+      if (!isNOIP) {
+        rankingUser.addScore(score - timeCost.getScore());
+      }
 
-      rankingUser.addSubmitCountAfter(1);
-      contestProblem.addSubmitCountAfter(1);
-      timeCostAfter.setTotalTime(duration);
-      timeCostAfter.setSubmitted(true);
-      timeCostAfter.setScore(score);
+      contestProblem.increaseSubmitCount();
+
+      timeCost.setTotalTime(duration);
+      timeCost.setSubmitted(true);
+      if (!isNOIP) {
+        timeCost.setScore(score);
+      }
+
       if (submission.getResult() == Result.ACCEPTED) {
-        rankingUser.addAcceptCountAfter(1);
-        contestProblem.addAcceptCountAfter(1);
+        rankingUser.increaseAcceptCount();
+        contestProblem.increaseAcceptCount();
         if (contestProblem.getFirstSubmission() == null) {
           contestProblem.setFirstSubmission(submission);
-          timeCostAfter.setFirstPassed(true);
+          timeCost.setFirstPassed(true);
         }
-        if (!timeCostAfter.getPassed()) {
-          timeCostAfter.setPassed(true);
+        if (!timeCost.getPassed()) {
+          timeCost.setPassed(true);
         }
       } else {
-        if (!timeCostAfter.getPassed()) {
-          timeCostAfter.addErrorCount(1);
-          timeCostTotalAfter.addTotalTime(Duration.ofMinutes(30).toMillis());
+        if (!timeCost.getPassed()) {
+          timeCost.increaseErrorCount();
+          rankingUser.addTime(Duration.ofMinutes(30).toMillis());
         }
       }
 
-      contestProblem.computeAcceptRateAfter();
-      timeCostRepository.save(timeCostAfter);
-      timeCostRepository.save(timeCostTotalAfter);
-
-      if (!contest.isRankingFrozen()) {
-
-        rankingUser.addSubmitCountBefore(1);
-        contestProblem.addSubmitCountBefore(1);
-
-        TimeCost timeCost =
-            timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
-                rankingUser, contestProblem, true);
-
-        TimeCost timeCostTotal =
-            timeCostRepository.findByRankingUserAndContestProblemIsNullAndFrozen(rankingUser, true);
-        timeCostTotal.addTotalTime(duration);
-        timeCostTotal.addScore(score - timeCost.getScore());
-
-        timeCost.setTotalTime(duration);
-        timeCost.setSubmitted(true);
-        timeCost.setScore(score);
-
-
-
-        if (submission.getResult() == Result.ACCEPTED) {
-
-          rankingUser.addAcceptCountBefore(1);
-          contestProblem.addAcceptCountBefore(1);
-
-          if (contestProblem.getFirstSubmission() == null) {
-            contestProblem.setFirstSubmission(submission);
-            timeCost.setFirstPassed(true);
-          }
-          if (!timeCost.getPassed()) {
-            timeCost.setPassed(true);
-          }
-        } else {
-          if (!timeCost.getPassed()) {
-            timeCost.addErrorCount(1);
-            timeCostTotal.addTotalTime(Duration.ofMinutes(30).toMillis());
-          }
-        }
-
-        contestProblem.computeAcceptRateBefore();
-
-        timeCostRepository.save(timeCost);
-        timeCostRepository.save(timeCostTotal);
-      }
-
+      contestProblem.computeAcceptRate();
+      timeCostRepository.save(timeCost);
       rankingUserRepository.save(rankingUser);
       contestProblemRepository.save(contestProblem);
     }
 
-    //    submissionCounter(submission, user);
     return mapper.entityToDTO(submissionRepository.save(submission));
   }
+
 
   @Override
   public SubmissionDTO createPracticeSubmission(SubmissionDTO submissionDTO)
