@@ -335,6 +335,11 @@ public class ContestServiceImpl implements ContestService {
           && contest.getStatus().equals(ContestStatus.NOT_STARTED)) {
         setContestStatus(contest, ContestStatus.PROCESSING);
       }
+
+      if ((contest.getEndDate().isBefore(LocalDateTime.now()))
+          || (contest.getEndDate().isEqual(LocalDateTime.now()))) {
+        setContestStatus(contest, ContestStatus.ENDED);
+      }
     }
     contestList = contestRepository.saveAll(contestList);
     Long count = contestRepository.count(cs);
