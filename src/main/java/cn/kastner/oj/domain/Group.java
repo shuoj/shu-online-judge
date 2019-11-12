@@ -7,6 +7,7 @@ import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,7 +18,7 @@ public class Group {
 
   @Id
   @Column(length = 40)
-  private String id;
+  private String id = UUID.randomUUID().toString();
 
   @Column(updatable = false, unique = true)
   private Long idx;
@@ -36,10 +37,8 @@ public class Group {
       joinColumns = {@JoinColumn(name = "group_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")})
   @JsonIgnore
-  private Set<User> userSet;
-  private LocalDateTime createDate;
+  private Set<User> userSet = new HashSet<>();
+  private LocalDateTime createDate = LocalDateTime.now();
+  private Boolean userGenerated = false;
 
-  public Group() {
-    this.id = UUID.randomUUID().toString();
-  }
 }

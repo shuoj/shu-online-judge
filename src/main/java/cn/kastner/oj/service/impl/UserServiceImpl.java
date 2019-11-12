@@ -257,6 +257,9 @@ public class UserServiceImpl implements UserService {
             .findById(groupId)
             .orElseThrow(() -> new GroupException(GroupException.NO_SUCH_GROUP));
 
+    if (group.getUserGenerated()) {
+      throw new GroupException(GroupException.HAS_BEEN_GENERATED);
+    }
     List<User> userList = new ArrayList<>();
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     List<Authority> authorities = new ArrayList<>();
@@ -275,6 +278,7 @@ public class UserServiceImpl implements UserService {
 
     userList = userRepository.saveAll(userList);
     group.setUserSet(new HashSet<>(userList));
+    group.setUserGenerated(true);
     groupRepository.save(group);
 
     List<JwtUser> jwtUserList = JwtUserFactory.createList(userRepository.saveAll(userList));
@@ -288,6 +292,10 @@ public class UserServiceImpl implements UserService {
         groupRepository
             .findById(groupId)
             .orElseThrow(() -> new GroupException(GroupException.NO_SUCH_GROUP));
+
+    if (group.getUserGenerated()) {
+      throw new GroupException(GroupException.HAS_BEEN_GENERATED);
+    }
 
     ExcelUtil.validExcel(excel);
 
@@ -337,6 +345,7 @@ public class UserServiceImpl implements UserService {
 
     userList = userRepository.saveAll(userList);
     group.setUserSet(new HashSet<>(userList));
+    group.setUserGenerated(true);
     groupRepository.save(group);
 
     List<JwtUser> jwtUserList = JwtUserFactory.createList(userRepository.saveAll(userList));
