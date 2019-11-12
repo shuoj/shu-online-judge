@@ -87,7 +87,7 @@ public class Problem {
   private Integer submitCount = 0;
   private Double acceptRate = 0.0;
   private LocalDateTime createDate = LocalDateTime.now();
-  private LocalDateTime lastUsedDate = LocalDateTime.now();
+  private LocalDateTime lastUsedDate;
   private LocalDateTime modifiedDate = LocalDateTime.now();
   private Integer testCaseCount = 0;
 

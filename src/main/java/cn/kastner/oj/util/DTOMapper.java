@@ -53,6 +53,7 @@ public interface DTOMapper {
   @Mapping(target = "hint", source = "problem.hint")
   @Mapping(target = "source", source = "problem.source")
   @Mapping(target = "createDate", source = "problem.createDate")
+  @Mapping(target = "lastUsedDate", source = "problem.lastUsedDate")
   @Mapping(target = "modifiedDate", source = "problem.modifiedDate")
   @Mapping(target = "id", source = "problem.id")
   ProblemDTO entityToDTO(ContestProblem contestProblem);
