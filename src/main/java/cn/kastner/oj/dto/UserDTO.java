@@ -5,23 +5,31 @@ import lombok.Data;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import java.util.Collection;
 
 @Data
 public class UserDTO {
-  @NotBlank
+  private String id;
+
+  @NotBlank(message = "用户名不能为空")
   private String username;
-  @NotBlank
+
+  @NotBlank(message = "密码不能为空")
   private String password;
-  @Email
+
+  @Email(message = "邮箱格式不正确")
   private String email;
-  @NotBlank
+
+  @NotBlank(message = "名字不能为空")
   private String firstname;
-  @NotBlank
+
+  @NotBlank(message = "姓氏不能为空")
   private String lastname;
-  @NotBlank
+
+  @NotBlank(message = "学校不能为空 ")
   private String school;
-  @NotEmpty
+
+  private String signature;
+  private Boolean enabled;
   private Collection<Authority> authorities;
 }

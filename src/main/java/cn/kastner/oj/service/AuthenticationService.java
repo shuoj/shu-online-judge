@@ -2,12 +2,13 @@ package cn.kastner.oj.service;
 
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.AuthLogDTO;
+import cn.kastner.oj.dto.UserDTO;
 import cn.kastner.oj.exception.AuthenticationException;
-import cn.kastner.oj.exception.ValidateException;
+import cn.kastner.oj.exception.UserException;
 
 public interface AuthenticationService {
 
-  User register(User user) throws ValidateException;
+  User register(UserDTO userDTO) throws UserException;
 
   User forgotPassword(String password);
 

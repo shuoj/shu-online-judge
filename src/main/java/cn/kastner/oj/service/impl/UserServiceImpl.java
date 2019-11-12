@@ -141,12 +141,12 @@ public class UserServiceImpl implements UserService {
 
     final String username = userDTO.getUsername();
     if (userRepository.existsByUsername(username)) {
-      throw new UserException(UserException.USERNAME_REPEAT);
+      throw new UserException(UserException.DUPLICATED_USERNAME);
     }
 
     final String email = userDTO.getEmail();
     if (userRepository.existsByEmail(email)) {
-      throw new UserException(UserException.EMAIL_REPEAT);
+      throw new UserException(UserException.DUPLICATED_EMAIL);
     }
 
     User user = new User();
@@ -160,73 +160,65 @@ public class UserServiceImpl implements UserService {
     for (Authority authority : userDTO.getAuthorities()) {
       authorities.add(authorityRepository.findByName(authority.getName()));
     }
+    user.setFirstname(userDTO.getFirstname());
+    userDTO.setLastname(userDTO.getLastname());
     user.setName(userDTO.getFirstname() + userDTO.getLastname());
     user.setAuthorities(authorities);
     return JwtUserFactory.create(userRepository.save(user));
   }
 
   @Override
-  public JwtUser update(User updateUser) throws UserException {
+  public JwtUser update(UserDTO userDTO) throws UserException {
 
     User user =
         userRepository
-            .findById(updateUser.getId())
+            .findById(userDTO.getId())
             .orElseThrow(() -> new UserException(UserException.NO_SUCH_USER));
-    String username = updateUser.getUsername();
+
+    String username = userDTO.getUsername();
     if (null != username) {
-      Optional<User> exUser = userRepository.findUserByUsername(username);
-      if (exUser.isPresent() && !exUser.get().getId().equals(updateUser.getId())) {
-        throw new UserException(UserException.USERNAME_REPEAT);
+      if (userRepository.existsByUsernameAndIdIsNot(username, userDTO.getId())) {
+        throw new UserException(UserException.DUPLICATED_USERNAME);
       }
       user.setUsername(username);
     }
 
-    String email = updateUser.getEmail();
+    String email = userDTO.getEmail();
     if (null != email) {
-      Optional<User> exUser = userRepository.findByEmail(email);
-      if (exUser.isPresent() && !exUser.get().getEmail().equals(updateUser.getEmail())) {
-        throw new UserException(UserException.EMAIL_REPEAT);
+      if (userRepository.existsByEmailAndIdIsNot(email, userDTO.getId())) {
+        throw new UserException(UserException.DUPLICATED_EMAIL);
       }
       user.setEmail(email);
     }
 
-    if (null != updateUser.getEnabled()) {
-      user.setEnabled(updateUser.getEnabled());
+    if (null != userDTO.getEnabled()) {
+      user.setEnabled(userDTO.getEnabled());
     }
 
-    if (null != updateUser.getName()) {
-      user.setName(updateUser.getName());
-    }
-
-    if (null != updateUser.getAuthorities()) {
-      user.setAuthorities(updateUser.getAuthorities());
-    }
-
-    if (null != updateUser.getPassword()) {
-      BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-      user.setPassword(encoder.encode(updateUser.getPassword()));
+    if (null != userDTO.getPassword()) {
+      user.setPassword(userDTO.getPassword());
       user.setLastPasswordResetDate(new Date());
     }
 
-    if (null != updateUser.getFirstname()) {
-      user.setFirstname(updateUser.getFirstname());
+    if (null != userDTO.getFirstname()) {
+      user.setFirstname(userDTO.getFirstname());
     }
 
-    if (null != updateUser.getLastname()) {
-      user.setLastname(updateUser.getLastname());
+    if (null != userDTO.getLastname()) {
+      user.setLastname(userDTO.getLastname());
     }
 
-    if (null != updateUser.getSchool()) {
-      user.setSchool(updateUser.getSchool());
+    if (null != userDTO.getSchool()) {
+      user.setSchool(userDTO.getSchool());
     }
 
-    if (null != updateUser.getSignature()) {
-      user.setSignature(updateUser.getSignature());
+    if (null != userDTO.getSignature()) {
+      user.setSignature(userDTO.getSignature());
     }
 
-    if (null != updateUser.getAuthorities()) {
+    if (null != userDTO.getAuthorities()) {
       List<Authority> authorities = new ArrayList<>();
-      for (Authority authority : updateUser.getAuthorities()) {
+      for (Authority authority : userDTO.getAuthorities()) {
         authorities.add(authorityRepository.findByName(authority.getName()));
       }
       user.setAuthorities(authorities);

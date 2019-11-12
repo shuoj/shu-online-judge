@@ -1,6 +1,5 @@
 package cn.kastner.oj.service;
 
-import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.UserDTO;
 import cn.kastner.oj.exception.FileException;
@@ -22,7 +21,7 @@ public interface UserService {
 
   JwtUser create(UserDTO userDTO) throws UserException;
 
-  JwtUser update(User user) throws UserException;
+  JwtUser update(UserDTO userDTO) throws UserException;
 
   void delete(List<String> id) throws UserException;
 

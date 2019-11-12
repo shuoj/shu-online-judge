@@ -1,6 +1,5 @@
 package cn.kastner.oj.controller;
 
-import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.ListDTO;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.UserDTO;
@@ -54,9 +53,9 @@ public class UserRestController {
 
   @PutMapping(value = "/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public JwtUser update(@RequestBody User user, @PathVariable String id) throws UserException {
-    user.setId(id);
-    return userService.update(user);
+  public JwtUser update(@RequestBody UserDTO userDTO, @PathVariable String id) throws UserException {
+    userDTO.setId(id);
+    return userService.update(userDTO);
   }
 
   @DeleteMapping

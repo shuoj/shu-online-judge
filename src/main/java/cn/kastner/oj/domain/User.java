@@ -157,12 +157,13 @@ public class User {
       String lastname,
       String school,
       List<Authority> authorities) {
-    this.id = UUID.randomUUID().toString();
+    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     this.username = username;
-    this.password = password;
+    this.password = encoder.encode(password);
     this.email = email;
     this.firstname = firstname;
     this.lastname = lastname;
+    this.name = firstname + lastname;
     this.school = school;
     this.authorities = authorities;
   }
