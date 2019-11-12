@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -39,9 +41,11 @@ public class ContestProblem {
   @Fetch(FetchMode.SUBSELECT)
   @OrderBy("id DESC ")
   @JsonIgnore
+  @Transient
   private List<TimeCost> timeList = new ArrayList<>();
 
   @OneToOne
+  @NotFound(action = NotFoundAction.IGNORE)
   private Submission firstSubmission;
 
   public String getContestId() {

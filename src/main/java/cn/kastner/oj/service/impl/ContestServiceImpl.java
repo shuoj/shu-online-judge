@@ -129,6 +129,7 @@ public class ContestServiceImpl implements ContestService {
     for (RankingUser rankingUser : rankingUserList) {
       timeCostRepository.deleteByRankingUser(rankingUser);
     }
+    submissionRepository.deleteAllByContest(contest);
     rankingUserRepository.deleteAll(rankingUserList);
     contestProblemRepository.deleteAllByContest(contest);
     contestRepository.delete(contest);

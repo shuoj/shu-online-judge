@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.persistence.*;
@@ -51,14 +53,18 @@ public class Contest {
   @Fetch(FetchMode.SUBSELECT)
   @OneToMany(mappedBy = "contest")
   @JsonIgnore
+  @NotFound(action = NotFoundAction.IGNORE)
+  @Transient
   private List<Submission> submissionList;
 
   @OneToMany(mappedBy = "contest")
   @JsonIgnore
+  @Transient
   private Set<ContestProblem> contestProblemSet = new HashSet<>();
 
   @OneToMany(mappedBy = "contest")
   @JsonIgnore
+  @Transient
   private List<Clarification> clarificationList;
 
   @ManyToMany(fetch = FetchType.EAGER)
@@ -68,6 +74,7 @@ public class Contest {
       joinColumns = {@JoinColumn(name = "contest_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")})
   @JsonIgnore
+  @Transient
   private Set<User> userSet = new HashSet<>();
 
   @OneToMany(
@@ -75,6 +82,7 @@ public class Contest {
       fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<RankingUser> rankingUserList = new ArrayList<>();
 
   @Fetch(FetchMode.SUBSELECT)
@@ -84,6 +92,7 @@ public class Contest {
       joinColumns = {@JoinColumn(name = "contest_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")})
   @JsonIgnore
+  @Transient
   private Set<User> userListExcluded = new HashSet<>();
 
   private Boolean frozen = false;
