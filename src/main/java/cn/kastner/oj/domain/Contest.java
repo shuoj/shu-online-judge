@@ -72,8 +72,7 @@ public class Contest {
 
   @OneToMany(
       mappedBy = "contest",
-      fetch = FetchType.LAZY,
-      cascade = {CascadeType.ALL})
+      fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
   private List<RankingUser> rankingUserList = new ArrayList<>();

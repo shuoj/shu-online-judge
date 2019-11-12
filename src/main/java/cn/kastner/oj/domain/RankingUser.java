@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ public class RankingUser {
 
   @ManyToOne
   @JoinColumn(name = "contest_id")
+  @NotFound(action = NotFoundAction.IGNORE)
   private Contest contest;
 
   private Integer passedCount = 0;
