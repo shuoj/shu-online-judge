@@ -47,8 +47,7 @@ public class Problem {
 
   @Fetch(FetchMode.SELECT)
   @ManyToMany(
-      fetch = FetchType.EAGER,
-      cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+      fetch = FetchType.EAGER)
   @JoinTable(
       name = "problem_tag",
       joinColumns = {@JoinColumn(name = "problem_id", referencedColumnName = "id")},

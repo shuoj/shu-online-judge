@@ -149,7 +149,10 @@ public class ProblemServiceImpl implements ProblemService {
       problem.setAuthor(user);
 
       problem.setTagList(new HashSet<>());
-      setTagSet(problem, mapper.toTags(problemDTO.getTagList()));
+      Set<Tag> tagSet = new HashSet<>(
+          processTagSet(problem, mapper.toTags(problemDTO.getTagList()))
+      );
+      problem.setTagList(tagSet);
 
       if (!validateSampleIO(problemDTO.getSampleIOList())) {
         throw new ProblemException(ProblemException.SAMPLE_IO_INVALID);
@@ -237,7 +240,10 @@ public class ProblemServiceImpl implements ProblemService {
     }
 
     if (null != problemDTO.getTagList()) {
-      setTagSet(problem, mapper.toTags(problemDTO.getTagList()));
+      Set<Tag> tagSet = new HashSet<>(
+          processTagSet(problem, mapper.toTags(problemDTO.getTagList()))
+      );
+      problem.setTagList(tagSet);
     }
 
     problem.setId(id);
@@ -280,7 +286,7 @@ public class ProblemServiceImpl implements ProblemService {
     return mapper.entityToDTO(problem);
   }
 
-  private void setTagSet(Problem problem, Set<Tag> tagSet) {
+  private Collection<Tag> processTagSet(Problem problem, Set<Tag> tagSet) {
     Set<Tag> existTags = problem.getTagList();
     for (Tag t : tagSet) {
       if (!existTags.contains(t)) {
@@ -288,16 +294,18 @@ public class ProblemServiceImpl implements ProblemService {
         if (tagOptional.isPresent()) {
           Tag tag = tagOptional.get();
           tag.setProblemCount(tag.getProblemCount() + 1);
+          tag.getProblemList().add(problem);
           existTags.add(tag);
         } else {
           Tag newTag = new Tag();
           newTag.setName(t.getName());
-          newTag.setProblemCount(newTag.getProblemCount() + 1);
+          newTag.setProblemCount(1L);
+          newTag.getProblemList().add(problem);
           existTags.add(newTag);
         }
       }
     }
-    problem.setTagList(existTags);
+    return tagRepository.saveAll(existTags);
   }
 
   private boolean validateSampleIO(List<SampleIO> sampleIOList) {
