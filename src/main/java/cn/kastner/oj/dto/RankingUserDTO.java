@@ -23,6 +23,8 @@ public class RankingUserDTO {
 
   private Long time;
 
+  private Double score;
+
   private List<TimeCostDTO> timeList;
 
   private Boolean ranked;

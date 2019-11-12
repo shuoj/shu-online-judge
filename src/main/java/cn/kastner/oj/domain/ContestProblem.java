@@ -35,7 +35,7 @@ public class ContestProblem {
 
   private Integer score = 0;
 
-  @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "contestProblem")
+  @OneToMany(fetch = FetchType.EAGER, mappedBy = "contestProblem")
   @Fetch(FetchMode.SUBSELECT)
   @OrderBy("id DESC ")
   @JsonIgnore

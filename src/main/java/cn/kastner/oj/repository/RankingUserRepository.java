@@ -14,6 +14,8 @@ public interface RankingUserRepository
 
   List<RankingUser> findByContestOrderByPassedCountDescTimeAsc(Contest contest);
 
+  List<RankingUser> findByContestOrderByScoreDescTimeAsc(Contest contest);
+
   RankingUser findByContestAndUser(Contest contest, User user);
 
   void deleteAllByContest(Contest contest);

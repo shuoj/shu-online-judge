@@ -543,6 +543,7 @@ public class ContestServiceImpl implements ContestService {
         List<RankingUser> rankingUserList = new ArrayList<>();
         for (User user : contest.getUserSet()) {
           RankingUser rankingUser = RankingUserFactory.create(user, contest);
+          timeCostRepository.saveAll(rankingUser.getTimeList());
           rankingUserList.add(rankingUser);
         }
         rankingUserRepository.saveAll(rankingUserList);
@@ -605,6 +606,7 @@ public class ContestServiceImpl implements ContestService {
   private void addUserToRanking(Contest contest, User user) {
     List<RankingUser> rankingUserList = contest.getRankingUserList();
     RankingUser rankingUser = RankingUserFactory.create(user, contest);
+    timeCostRepository.saveAll(rankingUser.getTimeList());
     rankingUserList.add(rankingUserRepository.save(rankingUser));
     contest.setRankingUserList(rankingUserList);
     contestRepository.save(contest);

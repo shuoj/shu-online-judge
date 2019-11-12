@@ -4,6 +4,7 @@ import cn.kastner.oj.domain.Contest;
 import cn.kastner.oj.domain.RankingUser;
 import cn.kastner.oj.domain.TimeCost;
 import cn.kastner.oj.domain.enums.ContestStatus;
+import cn.kastner.oj.domain.enums.JudgeType;
 import cn.kastner.oj.repository.ContestRepository;
 import cn.kastner.oj.repository.RankingUserRepository;
 import cn.kastner.oj.repository.TimeCostRepository;
@@ -43,8 +44,13 @@ public class RankingComputingTask {
     List<Contest> contestList =
         contestRepository.findByStatusAndStartDateAfter(ContestStatus.PROCESSING, LocalDateTime.now().minusHours(4));
     for (Contest contest : contestList) {
-      List<RankingUser> rankingUserList =
-          rankingUserRepository.findByContestOrderByPassedCountDescTimeAsc(contest);
+      List<RankingUser> rankingUserList;
+      if (contest.getJudgeType().equals(JudgeType.IMMEDIATELY)) {
+        rankingUserList =
+            rankingUserRepository.findByContestOrderByPassedCountDescTimeAsc(contest);
+      } else {
+        rankingUserList = rankingUserRepository.findByContestOrderByScoreDescTimeAsc(contest);
+      }
       for (int i = 0; i < rankingUserList.size(); i++) {
         RankingUser rankingUser = rankingUserList.get(i);
         List<TimeCost> timeCostList = timeCostRepository.findByRankingUser(rankingUser);

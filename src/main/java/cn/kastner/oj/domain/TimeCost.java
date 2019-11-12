@@ -1,6 +1,8 @@
 package cn.kastner.oj.domain;
 
 import lombok.Data;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import javax.persistence.*;
 import java.util.UUID;
@@ -15,6 +17,7 @@ public class TimeCost {
   private String id = UUID.randomUUID().toString();
 
   @ManyToOne
+  @NotFound(action = NotFoundAction.IGNORE)
   private ContestProblem contestProblem;
 
   private Long totalTime = 0L;
@@ -32,6 +35,7 @@ public class TimeCost {
   private Double score = 0.0;
 
   @ManyToOne
+  @NotFound(action = NotFoundAction.IGNORE)
   private RankingUser rankingUser;
 
   public void addTotalTime(Long milliseconds) {
