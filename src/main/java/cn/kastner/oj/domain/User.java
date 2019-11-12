@@ -7,12 +7,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +27,7 @@ public class User {
 
   @Id
   @Column(length = 40)
-  private String id;
+  private String id = UUID.randomUUID().toString();
 
   @Column(unique = true, length = 50)
   @NotBlank(message = "用户名不能为空")
@@ -61,20 +63,20 @@ public class User {
   private String signature;
 
   @Column(length = 50)
-  private Long acCount;
+  private Long acCount = 0L;
 
   @Column(length = 50)
-  private Long submitCount;
+  private Long submitCount = 0L;
 
   @Column(length = 50)
-  private Double acRate;
+  private Double acRate = 0.0;
 
   @NotNull
-  private Boolean enabled;
+  private Boolean enabled = true;
 
   @Temporal(TemporalType.TIMESTAMP)
   @NotNull
-  private Date lastPasswordResetDate;
+  private Date lastPasswordResetDate = new Date();
 
   @ManyToMany(fetch = FetchType.EAGER)
   @Fetch(FetchMode.JOIN)
@@ -83,7 +85,7 @@ public class User {
       joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "authority_id", referencedColumnName = "id")})
   @JsonIgnore
-  private List<Authority> authorities;
+  private List<Authority> authorities = new ArrayList<>();
 
   @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
@@ -145,7 +147,7 @@ public class User {
   private List<UserSecurityQuestion> userSecurityQuestionList;
 
   private Long referUserId;
-  private Boolean temporary;
+  private Boolean temporary = false;
 
   public User(
       @NotNull @Size(min = 4, max = 50) String username,
@@ -162,11 +164,6 @@ public class User {
     this.firstname = firstname;
     this.lastname = lastname;
     this.school = school;
-    this.acCount = (long) 0;
-    this.submitCount = (long) 0;
-    this.acRate = 0.0;
-    this.enabled = true;
-    this.lastPasswordResetDate = new Date();
     this.authorities = authorities;
   }
 
@@ -176,16 +173,10 @@ public class User {
       @NotNull String email,
       String school,
       List<Authority> authorities) {
-    this.id = UUID.randomUUID().toString();
     this.username = username;
     this.password = password;
     this.email = email;
     this.school = school;
-    this.acCount = (long) 0;
-    this.submitCount = (long) 0;
-    this.acRate = 0.0;
-    this.enabled = true;
-    this.lastPasswordResetDate = new Date();
     this.authorities = authorities;
   }
 
@@ -198,7 +189,6 @@ public class User {
       @NotNull String email,
       String school,
       List<Authority> authorities) {
-    this.id = UUID.randomUUID().toString();
     this.username = username;
     this.password = password;
     this.firstname = firstname;
@@ -207,21 +197,10 @@ public class User {
     this.studentNumber = studentNumber;
     this.email = email;
     this.school = school;
-    this.acCount = (long) 0;
-    this.submitCount = (long) 0;
-    this.acRate = 0.0;
-    this.enabled = true;
-    this.lastPasswordResetDate = new Date();
     this.authorities = authorities;
   }
 
   public User() {
-    this.id = UUID.randomUUID().toString();
-    this.acCount = (long) 0;
-    this.submitCount = (long) 0;
-    this.acRate = 0.0;
-    this.enabled = true;
-    this.lastPasswordResetDate = new Date();
   }
 
   public boolean isAdmin() {
@@ -252,5 +231,10 @@ public class User {
     int code = 20;
     code = code * 30 + name.hashCode();
     return code;
+  }
+
+  public void setPassword(String password) {
+    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    this.password = encoder.encode(password);
   }
 }

@@ -5,6 +5,7 @@ import cn.kastner.oj.domain.User;
 import cn.kastner.oj.domain.security.Authority;
 import cn.kastner.oj.domain.security.AuthorityName;
 import cn.kastner.oj.dto.PageDTO;
+import cn.kastner.oj.dto.UserDTO;
 import cn.kastner.oj.exception.FileException;
 import cn.kastner.oj.exception.GroupException;
 import cn.kastner.oj.exception.UserException;
@@ -136,29 +137,30 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public JwtUser create(User user) throws UserException {
+  public JwtUser create(UserDTO userDTO) throws UserException {
 
-    final String username = user.getUsername();
-    Optional<User> userOptional = userRepository.findUserByUsername(username);
-    if (userOptional.isPresent()) {
+    final String username = userDTO.getUsername();
+    if (userRepository.existsByUsername(username)) {
       throw new UserException(UserException.USERNAME_REPEAT);
     }
 
-    final String email = user.getEmail();
-    Optional<User> userOptional1 = userRepository.findByEmail(email);
-    if (userOptional1.isPresent()) {
+    final String email = userDTO.getEmail();
+    if (userRepository.existsByEmail(email)) {
       throw new UserException(UserException.EMAIL_REPEAT);
     }
 
-    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-    final String rawPassword = user.getPassword();
-    user.setPassword(encoder.encode(rawPassword));
+    User user = new User();
+
+    user.setPassword(userDTO.getPassword());
+    user.setUsername(userDTO.getUsername());
+    user.setEmail(userDTO.getEmail());
+    user.setSchool(userDTO.getSchool());
 
     List<Authority> authorities = new ArrayList<>();
-    for (Authority authority : user.getAuthorities()) {
+    for (Authority authority : userDTO.getAuthorities()) {
       authorities.add(authorityRepository.findByName(authority.getName()));
     }
-    user.setName(user.getFirstname() + user.getLastname());
+    user.setName(userDTO.getFirstname() + userDTO.getLastname());
     user.setAuthorities(authorities);
     return JwtUserFactory.create(userRepository.save(user));
   }

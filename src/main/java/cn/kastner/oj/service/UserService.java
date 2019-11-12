@@ -2,6 +2,7 @@ package cn.kastner.oj.service;
 
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.PageDTO;
+import cn.kastner.oj.dto.UserDTO;
 import cn.kastner.oj.exception.FileException;
 import cn.kastner.oj.exception.GroupException;
 import cn.kastner.oj.exception.UserException;
@@ -19,7 +20,7 @@ public interface UserService {
 
   JwtUser getOne(String id) throws UserException;
 
-  JwtUser create(User user) throws UserException;
+  JwtUser create(UserDTO userDTO) throws UserException;
 
   JwtUser update(User user) throws UserException;
 

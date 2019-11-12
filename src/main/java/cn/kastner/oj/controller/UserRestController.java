@@ -3,6 +3,7 @@ package cn.kastner.oj.controller;
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.ListDTO;
 import cn.kastner.oj.dto.PageDTO;
+import cn.kastner.oj.dto.UserDTO;
 import cn.kastner.oj.dto.UserGenerationParam;
 import cn.kastner.oj.exception.AppException;
 import cn.kastner.oj.exception.UserException;
@@ -47,8 +48,8 @@ public class UserRestController {
 
   @PostMapping
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public JwtUser create(@RequestBody User user) throws UserException {
-    return userService.create(user);
+  public JwtUser create(@RequestBody UserDTO userDTO) throws UserException {
+    return userService.create(userDTO);
   }
 
   @PutMapping(value = "/{id}")
