@@ -115,6 +115,8 @@ public interface DTOMapper {
   @Mapping(target = "id", ignore = true)
   Group dtoToEntity(GroupDTO groupDTO);
 
+  List<GroupDTO> toGroupDTOs(List<Group> groupList);
+
   @Mapping(target = "contestId", source = "id")
   @Mapping(target = "contestName", source = "name")
   RankingDTO contestToRankingDTO(Contest contest);

@@ -6,19 +6,27 @@ import cn.kastner.oj.domain.IndexSequence;
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.GroupDTO;
+import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.exception.AuthorizationException;
 import cn.kastner.oj.exception.GroupException;
 import cn.kastner.oj.exception.UserException;
+import cn.kastner.oj.query.GroupQuery;
 import cn.kastner.oj.repository.GroupRepository;
 import cn.kastner.oj.repository.IndexSequenceRepository;
 import cn.kastner.oj.repository.UserRepository;
 import cn.kastner.oj.security.JwtUser;
 import cn.kastner.oj.security.JwtUserFactory;
 import cn.kastner.oj.service.GroupService;
+import cn.kastner.oj.util.CommonUtil;
 import cn.kastner.oj.util.DTOMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +46,10 @@ public class GroupServiceImpl implements GroupService {
 
   @Autowired
   public GroupServiceImpl(
-      GroupRepository groupRepository, DTOMapper mapper, UserRepository userRepository, IndexSequenceRepository indexSequenceRepository) {
+      GroupRepository groupRepository,
+      DTOMapper mapper,
+      UserRepository userRepository,
+      IndexSequenceRepository indexSequenceRepository) {
     this.groupRepository = groupRepository;
     this.mapper = mapper;
     this.userRepository = userRepository;
@@ -75,6 +86,49 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
+  public PageDTO<GroupDTO> findCriteria(GroupQuery groupQuery, Integer page, Integer size) {
+    User user = UserContext.getCurrentUser();
+    Pageable pageable = PageRequest.of(page, size, Sort.Direction.ASC, "idx");
+    Specification<Group> ps =
+        (root, criteriaQuery, criteriaBuilder) -> {
+          List<Predicate> predicateList = new ArrayList<>();
+
+          String name = groupQuery.getName();
+          if (!CommonUtil.isNull(name)) {
+            predicateList.add(
+                criteriaBuilder.like(root.get("name").as(String.class), "%" + name + "%"));
+          }
+
+          Long idx = groupQuery.getIdx();
+          if (null != idx) {
+            predicateList.add(criteriaBuilder.equal(root.get("idx").as(Long.class), idx));
+          }
+
+          if (null != groupQuery.getCurrentUser() && groupQuery.getCurrentUser()) {
+            predicateList.add(criteriaBuilder.equal(root.get("author").as(User.class), user));
+          } else if (null != groupQuery.getAuthorId()) {
+            Optional<User> authorOptional = userRepository.findById(groupQuery.getAuthorId());
+            if (!authorOptional.isPresent()) {
+              return null;
+            }
+            predicateList.add(
+                criteriaBuilder.equal(root.get("author").as(User.class), authorOptional.get()));
+          }
+
+          Predicate[] p = new Predicate[predicateList.size()];
+          return criteriaBuilder.and(predicateList.toArray(p));
+        };
+
+    if (null == ps) {
+      return new PageDTO<>(page, 0, 0L, new ArrayList<>());
+    }
+    List<Group> groupList = groupRepository.findAll(ps, pageable).getContent();
+    long count = groupRepository.count(ps);
+
+    return new PageDTO<>(page, size, count, mapper.toGroupDTOs(groupList));
+  }
+
+  @Override
   public GroupDTO create(GroupDTO in) throws GroupException {
     Optional<Group> groupOptional = groupRepository.findByName(in.getName());
     if (groupOptional.isPresent()) {
@@ -86,7 +140,7 @@ public class GroupServiceImpl implements GroupService {
     group.setCreateDate(LocalDateTime.now());
     IndexSequence sequence = indexSequenceRepository.findByName(EntityName.GROUP);
     group.setIdx(sequence.getNextIdx());
-    GroupDTO dto =  mapper.entityToDTO(groupRepository.save(group));
+    GroupDTO dto = mapper.entityToDTO(groupRepository.save(group));
     sequence.setNextIdx(group.getIdx() + 1);
     indexSequenceRepository.save(sequence);
     return dto;
