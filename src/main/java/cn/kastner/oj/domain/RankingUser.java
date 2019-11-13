@@ -52,6 +52,10 @@ public class RankingUser {
 
   private Integer rankingNumber;
 
+  private String teacherId;
+
+  private String groupId;
+
   public void increasePassedCount() {
     this.passedCount++;
   }

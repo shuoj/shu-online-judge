@@ -1,14 +1,11 @@
 package cn.kastner.oj.service;
 
 import cn.kastner.oj.domain.enums.ContestOption;
-import cn.kastner.oj.dto.ContestDTO;
-import cn.kastner.oj.dto.PageDTO;
-import cn.kastner.oj.dto.ProblemDTO;
-import cn.kastner.oj.dto.RankingDTO;
+import cn.kastner.oj.dto.*;
 import cn.kastner.oj.exception.ContestException;
 import cn.kastner.oj.exception.ProblemException;
 import cn.kastner.oj.query.ContestQuery;
-import cn.kastner.oj.security.JwtUser;
+import cn.kastner.oj.query.RankingQuery;
 
 import java.util.List;
 
@@ -24,16 +21,16 @@ public interface ContestService {
 
   ContestDTO findById(String id) throws ContestException;
 
-  List<JwtUser> addUsersByGroups(List<String> groupIdList, String contestId)
+  List<RankingUserDTO> addUsersByGroups(List<String> groupIdList, String contestId)
       throws ContestException;
 
-  List<JwtUser> getUsers(String id) throws ContestException;
+  List<RankingUserDTO> getUsers(String id) throws ContestException;
 
-  List<JwtUser> addUsers(List<String> userIdList, String contestId) throws ContestException;
+  List<RankingUserDTO> addUsers(List<String> userIdList, String contestId) throws ContestException;
 
-  List<JwtUser> deleteUsers(List<String> userIdList, String id) throws ContestException;
+  void deleteUsers(List<String> userIdList, String id) throws ContestException;
 
-  PageDTO<ContestDTO> findCriteria(Integer page, Integer size, ContestQuery contestQuery);
+  PageDTO<ContestDTO> findCriteria(Integer page, Integer size, ContestQuery contestQuery) throws ContestException;
 
   List<ProblemDTO> addProblems(List<String> problemIdList, String contestId)
       throws ContestException, ProblemException;
@@ -49,7 +46,7 @@ public interface ContestService {
 
   ContestDTO setContestStatus(String id, ContestOption option) throws ContestException;
 
-  Boolean joinContest(String id, String password) throws ContestException;
+  void joinContest(String id, String password) throws ContestException;
 
-  RankingDTO getRanking(String id) throws ContestException;
+  RankingDTO getRanking(String id, RankingQuery query) throws ContestException;
 }

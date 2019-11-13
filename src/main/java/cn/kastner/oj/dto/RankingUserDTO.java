@@ -30,4 +30,8 @@ public class RankingUserDTO {
   private Boolean ranked;
 
   private Integer rankingNumber;
+
+  private String teacherId;
+
+  private String groupId;
 }

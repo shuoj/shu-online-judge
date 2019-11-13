@@ -25,5 +25,6 @@ public class Authority {
 
   @ManyToMany(mappedBy = "authorities")
   @JsonIgnore
+  @Transient
   private List<User> userList;
 }

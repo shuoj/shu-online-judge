@@ -11,11 +11,16 @@ public final class RankingUserFactory {
   private RankingUserFactory() {
   }
 
-  public static RankingUser create(User user, Contest contest) {
+  public static RankingUser create(User user, Contest contest, Group group) {
     Set<ContestProblem> contestProblemSet = contest.getContestProblemSet();
     RankingUser rankingUser = new RankingUser();
     rankingUser.setContest(contest);
     rankingUser.setUser(user);
+
+    if (null != group) {
+      rankingUser.setGroupId(group.getId());
+      rankingUser.setTeacherId(group.getAuthor().getId());
+    }
 
     // initialize timeCostList
     List<TimeCost> timeCostList = new ArrayList<>();

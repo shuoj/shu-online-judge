@@ -13,7 +13,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Data
 @Entity
@@ -64,21 +67,13 @@ public class Contest {
   @JsonIgnore
   private List<Clarification> clarificationList;
 
-  @ManyToMany(fetch = FetchType.EAGER)
-  @Fetch(FetchMode.SELECT)
-  @JoinTable(
-      name = "contest_user",
-      joinColumns = {@JoinColumn(name = "contest_id", referencedColumnName = "id")},
-      inverseJoinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")})
-  @JsonIgnore
-  private Set<User> userSet = new HashSet<>();
-
   @OneToMany(
       mappedBy = "contest",
       fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
-  private List<RankingUser> rankingUserList = new ArrayList<>();
+  @Transient
+  private Set<RankingUser> rankingUserList = new HashSet<>();
 
   @Fetch(FetchMode.SUBSELECT)
   @ManyToMany(fetch = FetchType.LAZY)

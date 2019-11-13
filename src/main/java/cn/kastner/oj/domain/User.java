@@ -90,60 +90,66 @@ public class User {
   @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<Problem> problemList;
 
   @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<VirtualProblem> virtualProblemList;
 
   @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<Contest> contestList;
 
   @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<RankingUser> rankingUserList;
 
   @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<Announcement> announcementList;
 
   @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<Group> createGroupList;
 
   @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<AuthLog> authLogList;
 
   @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<Clarification> clarificationList;
 
   @ManyToMany(mappedBy = "userSet", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<Group> groupList;
-
-  @ManyToMany(mappedBy = "userSet", fetch = FetchType.LAZY)
-  @Fetch(FetchMode.SUBSELECT)
-  @JsonIgnore
-  private List<Contest> contestListJoined;
 
   @ManyToMany(mappedBy = "userListExcluded", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @Transient
   private List<Contest> contestListExcluded;
 
   @OneToMany(mappedBy = "user")
   @JsonIgnore
+  @Transient
   private List<UserSecurityQuestion> userSecurityQuestionList;
 
   private Long referUserId;

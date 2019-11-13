@@ -15,5 +15,7 @@ public interface TimeCostRepository
 
   List<TimeCost> findByRankingUser(RankingUser rankingUser);
 
-  void deleteByRankingUser(RankingUser rankingUser);
+  void deleteAllByRankingUser(RankingUser rankingUser);
+
+  void deleteAllByContestProblem(Iterable<ContestProblem> contestProblems);
 }
