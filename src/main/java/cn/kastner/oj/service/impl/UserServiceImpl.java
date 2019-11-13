@@ -114,17 +114,31 @@ public class UserServiceImpl implements UserService {
             predicateList.add(criteriaBuilder.equal(root.get("temporary"), temporary));
           }
 
+          List<String> roleList = userQuery.getRole();
+          if (null != roleList && !roleList.isEmpty()) {
+            List<Predicate> subPredicateList = new ArrayList<>();
+            for (String role : roleList) {
+              Authority authority = authorityRepository.findByName(AuthorityName.valueOf(role));
+              if (authority == null) {
+                return null;
+              }
+              subPredicateList.add(criteriaBuilder.isMember(authority, root.get("authorities")));
+            }
+            Predicate[] subPredicates = new Predicate[subPredicateList.size()];
+            predicateList.add(criteriaBuilder.or(subPredicateList.toArray(subPredicates)));
+          }
+
           Predicate[] predicates = new Predicate[predicateList.size()];
           return criteriaBuilder.and(predicateList.toArray(predicates));
         });
 
+    if (null == us) {
+      return new PageDTO<>(page, 0, 0L, new ArrayList<>());
+    }
+
     List<User> userList = userRepository.findAll(us, pageable).getContent();
     long count = userRepository.count(us);
-    List<JwtUser> jwtUserList = new ArrayList<>();
-    for (User user : userList) {
-      jwtUserList.add(JwtUserFactory.create(user));
-    }
-    return new PageDTO<>(page, jwtUserList.size(), count, jwtUserList);
+    return new PageDTO<>(page, userList.size(), count, JwtUserFactory.createList(userList));
   }
 
   @Override

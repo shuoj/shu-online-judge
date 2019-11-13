@@ -53,7 +53,8 @@ public class UserRestController {
 
   @PutMapping(value = "/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public JwtUser update(@RequestBody UserDTO userDTO, @PathVariable String id) throws UserException {
+  public JwtUser update(@RequestBody UserDTO userDTO, @PathVariable String id)
+      throws UserException {
     userDTO.setId(id);
     return userService.update(userDTO);
   }
@@ -61,7 +62,7 @@ public class UserRestController {
   @DeleteMapping
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public void delete(@RequestBody ListDTO<String> idList) throws UserException {
-//    userService.delete(idList.getList());
+    //    userService.delete(idList.getList());
   }
 
   @PostMapping(value = "/generate")
