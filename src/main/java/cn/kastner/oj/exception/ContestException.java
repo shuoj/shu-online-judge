@@ -34,6 +34,8 @@ public class ContestException extends AppException {
 
   public static final String BAD_CONTEST_STATUS = "不合法的比赛状态";
 
+  public static final String EXPORT_ERROR = "导出错误";
+
   public ContestException(String message) {
     super(message);
     switch (message) {
@@ -96,6 +98,10 @@ public class ContestException extends AppException {
       case BAD_PASSWORD:
         this.code = -16;
         this.status = HttpStatus.FORBIDDEN;
+        break;
+      case EXPORT_ERROR:
+        this.code = -17;
+        this.status = HttpStatus.INTERNAL_SERVER_ERROR;
         break;
       default:
         this.code = -1;

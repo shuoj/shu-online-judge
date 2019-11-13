@@ -60,7 +60,7 @@ public class RankingComputingTask {
           i--;
         }
       }
-      redisTemplate.opsForValue().set("rankingUserList:" + contest.getId(), mapper.toRankingUserDTOs(rankingUserList));
+      redisTemplate.opsForValue().set("rankingUserList:" + contest.getId(), mapper.toRankingUserDTOs(rankingUserRepository.saveAll(rankingUserList)));
     }
   }
 }

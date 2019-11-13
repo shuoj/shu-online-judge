@@ -17,6 +17,10 @@ import cn.kastner.oj.repository.*;
 import cn.kastner.oj.service.ContestService;
 import cn.kastner.oj.util.CommonUtil;
 import cn.kastner.oj.util.DTOMapper;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -243,7 +247,9 @@ public class ContestServiceImpl implements ContestService {
     for (Group group : groupList) {
       for (User user : group.getUserSet()) {
         if (!userSet.contains(user)) {
-          addRankingUserList.add(RankingUserFactory.create(user, contest, group));
+          RankingUser rankingUser = RankingUserFactory.create(user, contest, group);
+          timeCostRepository.saveAll(rankingUser.getTimeList());
+          addRankingUserList.add(rankingUser);
         }
       }
     }
@@ -387,7 +393,6 @@ public class ContestServiceImpl implements ContestService {
           TimeCost timeCost = new TimeCost();
           timeCost.setContestProblem(contestProblem);
           timeCost.setRankingUser(rankingUser);
-          timeCost.setFrozen(true);
           addTimeCostList.add(timeCost);
         }
 
@@ -436,7 +441,6 @@ public class ContestServiceImpl implements ContestService {
         TimeCost timeCost = new TimeCost();
         timeCost.setContestProblem(contestProblem);
         timeCost.setRankingUser(rankingUser);
-        timeCost.setFrozen(true);
 
         addTimeCostList.add(timeCost);
 
@@ -606,19 +610,12 @@ public class ContestServiceImpl implements ContestService {
       return rankingDTO;
     } else if (contest.getStatus() == ContestStatus.ENDED) {
       Set<RankingUser> rankingUserList = rankingUserRepository.findByContest(contest);
+
+      if (!rankingUserList.isEmpty()) {
+        rankingUserList = filterWithQuery(rankingUserList, query);
+      }
       for (RankingUser ru : rankingUserList) {
         ru.setTimeList(timeCostRepository.findByRankingUser(ru));
-      }
-      if (!rankingUserList.isEmpty()) {
-        if (null != query.getGroupId()) {
-          rankingUserList = rankingUserList.stream().filter(
-              rankingUserDTO -> query.getGroupId().equals(rankingUserDTO.getGroupId())
-          ).collect(Collectors.toSet());
-        } else if (null != query.getTeacherId()) {
-          rankingUserList = rankingUserList.stream().filter(
-              rankingUserDTO -> query.getTeacherId().equals(rankingUserDTO.getTeacherId())
-          ).collect(Collectors.toSet());
-        }
       }
       contest.setRankingUserList(rankingUserList);
       return mapper.contestToRankingDTO(contest);
@@ -626,6 +623,85 @@ public class ContestServiceImpl implements ContestService {
       throw new ContestException(ContestException.CONTEST_NOT_GOING);
     }
 
+  }
+
+  private Set<RankingUser> filterWithQuery(
+      Set<RankingUser> rankingUserList, RankingQuery query) {
+    if (null != query.getGroupId()) {
+      return rankingUserList.stream().filter(
+          rankingUserDTO -> query.getGroupId().equals(rankingUserDTO.getGroupId())
+      ).collect(Collectors.toSet());
+    } else if (null != query.getTeacherId()) {
+      return rankingUserList.stream().filter(
+          rankingUserDTO -> query.getTeacherId().equals(rankingUserDTO.getTeacherId())
+      ).collect(Collectors.toSet());
+    }
+    return rankingUserList;
+  }
+
+  @Override
+  public Workbook exportRanking(String id, RankingQuery query) throws ContestException {
+    Contest contest =
+        contestRepository
+            .findById(id)
+            .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
+    Set<RankingUser> rankingUserSet = rankingUserRepository.findByContest(contest);
+    rankingUserSet = filterWithQuery(rankingUserSet, query);
+    XSSFWorkbook workbook = new XSSFWorkbook();
+    XSSFSheet sheet = workbook.createSheet("排名信息");
+
+    int rowNum = 0;
+    Row header = sheet.createRow(rowNum++);
+    int headerColumnNum = 0;
+    header.createCell(headerColumnNum++).setCellValue("排名");
+    header.createCell(headerColumnNum++).setCellValue("学号");
+    header.createCell(headerColumnNum++).setCellValue("姓名");
+    if (contest.getJudgeType() == JudgeType.IMMEDIATELY) {
+      header.createCell(headerColumnNum++).setCellValue("提交数");
+      header.createCell(headerColumnNum++).setCellValue("通过数");
+    } else {
+      header.createCell(headerColumnNum++).setCellValue("总分");
+    }
+    header.createCell(headerColumnNum++).setCellValue("指导教师");
+    header.createCell(headerColumnNum++).setCellValue("小组/班级");
+    for (int i = 'A', j = 0; j < contestProblemRepository.countByContest(contest); i++, j++) {
+      header.createCell(headerColumnNum++).setCellValue(String.format("%c", i));
+    }
+
+    for (RankingUser rankingUser : rankingUserSet) {
+      Row row = sheet.createRow(rowNum++);
+      int columnNum = 0;
+      row.createCell(columnNum++).setCellValue(rankingUser.getRankingNumber());
+      row.createCell(columnNum++).setCellValue(rankingUser.getUser().getStudentNumber());
+      row.createCell(columnNum++).setCellValue(rankingUser.getUser().getName());
+      if (contest.getJudgeType() == JudgeType.IMMEDIATELY) {
+        row.createCell(columnNum++).setCellValue(rankingUser.getAcceptCount());
+        row.createCell(columnNum++).setCellValue(rankingUser.getSubmitCount());
+      } else {
+        row.createCell(columnNum++).setCellValue(rankingUser.getScore());
+      }
+      Optional<User> teacherOptional = userRepository.findById(rankingUser.getTeacherId());
+      if (teacherOptional.isPresent()) {
+        row.createCell(columnNum++).setCellValue(teacherOptional.get().getName());
+      } else {
+        columnNum++;
+      }
+      Optional<Group> groupOptional = groupRepository.findById(rankingUser.getGroupId());
+      if (groupOptional.isPresent()) {
+        row.createCell(columnNum++).setCellValue(groupOptional.get().getName());
+      } else {
+        columnNum++;
+      }
+      List<TimeCost> timeCostList = timeCostRepository.findByRankingUser(rankingUser);
+      for (TimeCost timeCost : timeCostList) {
+        if (contest.getJudgeType() == JudgeType.IMMEDIATELY) {
+          row.createCell(columnNum++).setCellValue(timeCost.getPassed() ? 1 : 0);
+        } else {
+          row.createCell(columnNum++).setCellValue(timeCost.getScore());
+        }
+      }
+    }
+    return workbook;
   }
 
   private void requirePassword(Contest contest) throws ContestException {

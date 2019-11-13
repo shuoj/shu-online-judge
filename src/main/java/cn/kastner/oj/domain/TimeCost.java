@@ -16,7 +16,7 @@ public class TimeCost {
   @Column(length = 40)
   private String id = UUID.randomUUID().toString();
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   private ContestProblem contestProblem;
 
@@ -30,11 +30,9 @@ public class TimeCost {
 
   private Boolean firstPassed = false;
 
-  private Boolean frozen = false;
-
   private Double score = 0.0;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   private RankingUser rankingUser;
 

@@ -42,7 +42,7 @@ public class RankingUser {
 
   private Long time = 0L;
 
-  @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "rankingUser")
+  @OneToMany(fetch = FetchType.EAGER, mappedBy = "rankingUser")
   @Fetch(FetchMode.SUBSELECT)
   @OrderBy("id DESC ")
   @JsonIgnore

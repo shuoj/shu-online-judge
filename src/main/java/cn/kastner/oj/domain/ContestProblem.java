@@ -44,7 +44,7 @@ public class ContestProblem {
   @Transient
   private List<TimeCost> timeList = new ArrayList<>();
 
-  @OneToOne
+  @OneToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   private Submission firstSubmission;
 

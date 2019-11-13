@@ -6,6 +6,7 @@ import cn.kastner.oj.exception.ContestException;
 import cn.kastner.oj.exception.ProblemException;
 import cn.kastner.oj.query.ContestQuery;
 import cn.kastner.oj.query.RankingQuery;
+import org.apache.poi.ss.usermodel.Workbook;
 
 import java.util.List;
 
@@ -49,4 +50,6 @@ public interface ContestService {
   void joinContest(String id, String password) throws ContestException;
 
   RankingDTO getRanking(String id, RankingQuery query) throws ContestException;
+
+  Workbook exportRanking(String id, RankingQuery query) throws ContestException;
 }

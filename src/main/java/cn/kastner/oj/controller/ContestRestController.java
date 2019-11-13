@@ -8,6 +8,7 @@ import cn.kastner.oj.exception.ValidateException;
 import cn.kastner.oj.query.ContestQuery;
 import cn.kastner.oj.query.RankingQuery;
 import cn.kastner.oj.service.ContestService;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 @RestController
@@ -165,6 +169,23 @@ public class ContestRestController {
   @GetMapping("/{id}/ranking")
   public RankingDTO getRanking(@PathVariable String id, RankingQuery query) throws AppException {
     return contestService.getRanking(id, query);
+  }
+
+  @GetMapping("/{id}/ranking/export")
+  public void exportRanking(
+      @PathVariable String id, RankingQuery query, HttpServletResponse response)
+      throws ContestException {
+    response.setHeader("content-type", "application/octet-stream");
+    response.setContentType("application/octet-stream");
+    String fileName = contestService.findById(id).getName() + "排名";
+    response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
+
+    Workbook workbook = contestService.exportRanking(id, query);
+    try (OutputStream os = response.getOutputStream()) {
+      workbook.write(os);
+    } catch (IOException e) {
+      throw new ContestException(ContestException.EXPORT_ERROR);
+    }
   }
 
   @PatchMapping("/{id}/status")

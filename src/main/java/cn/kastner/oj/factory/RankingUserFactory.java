@@ -29,7 +29,6 @@ public final class RankingUserFactory {
       TimeCost timeCost = new TimeCost();
       timeCost.setContestProblem(contestProblem);
       timeCost.setRankingUser(rankingUser);
-      timeCost.setFrozen(false);
       timeCostList.add(timeCost);
     }
     rankingUser.setTimeList(timeCostList);

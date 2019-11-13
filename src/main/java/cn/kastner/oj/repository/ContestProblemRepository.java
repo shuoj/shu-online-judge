@@ -21,4 +21,6 @@ public interface ContestProblemRepository
   void deleteAllByProblemAndContest(Iterable<Problem> problems, Contest contest);
 
   void deleteAllByContest(Contest contest);
+
+  Integer countByContest(Contest contest);
 }
