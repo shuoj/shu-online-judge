@@ -132,6 +132,12 @@
             <artifactId>sentry-logback</artifactId>
             <version>1.7.27</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>28.1-jre</version>
+        </dependency>
     </dependencies>
 
     <build>

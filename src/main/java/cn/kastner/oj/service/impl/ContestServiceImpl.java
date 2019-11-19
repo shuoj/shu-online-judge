@@ -17,6 +17,7 @@ import cn.kastner.oj.repository.*;
 import cn.kastner.oj.service.ContestService;
 import cn.kastner.oj.util.CommonUtil;
 import cn.kastner.oj.util.DTOMapper;
+import com.google.common.base.Strings;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -596,11 +597,11 @@ public class ContestServiceImpl implements ContestService {
                 redisTemplate.opsForValue().get("timeCostList:" + rankingUserDTO.getId()));
       }
       if (null != rankingUserList && !rankingUserList.isEmpty()) {
-        if (null != query.getGroupId()) {
+        if (!Strings.isNullOrEmpty(query.getGroupId())) {
           rankingUserList = rankingUserList.stream().filter(
               rankingUserDTO -> query.getGroupId().equals(rankingUserDTO.getGroupId())
           ).collect(Collectors.toList());
-        } else if (null != query.getTeacherId()) {
+        } else if (!Strings.isNullOrEmpty(query.getTeacherId())) {
           rankingUserList = rankingUserList.stream().filter(
               rankingUserDTO -> query.getTeacherId().equals(rankingUserDTO.getTeacherId())
           ).collect(Collectors.toList());
@@ -627,11 +628,11 @@ public class ContestServiceImpl implements ContestService {
 
   private Set<RankingUser> filterWithQuery(
       Set<RankingUser> rankingUserList, RankingQuery query) {
-    if (null != query.getGroupId()) {
+    if (!Strings.isNullOrEmpty(query.getGroupId())) {
       return rankingUserList.stream().filter(
           rankingUserDTO -> query.getGroupId().equals(rankingUserDTO.getGroupId())
       ).collect(Collectors.toSet());
-    } else if (null != query.getTeacherId()) {
+    } else if (!Strings.isNullOrEmpty(query.getTeacherId())) {
       return rankingUserList.stream().filter(
           rankingUserDTO -> query.getTeacherId().equals(rankingUserDTO.getTeacherId())
       ).collect(Collectors.toSet());
