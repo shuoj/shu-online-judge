@@ -169,7 +169,7 @@ public class User {
     this.email = email;
     this.firstname = firstname;
     this.lastname = lastname;
-    this.name = firstname + lastname;
+    this.name = lastname + firstname;
     this.school = school;
     this.authorities = authorities;
   }
@@ -200,7 +200,7 @@ public class User {
     this.password = password;
     this.firstname = firstname;
     this.lastname = lastname;
-    this.name = firstname + lastname;
+    this.name = lastname + firstname;
     this.studentNumber = studentNumber;
     this.email = email;
     this.school = school;
