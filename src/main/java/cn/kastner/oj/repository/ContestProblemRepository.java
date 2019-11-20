@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface ContestProblemRepository
     extends JpaRepository<ContestProblem, String>, JpaSpecificationExecutor<ContestProblem> {
-  List<ContestProblem> findByContest(Contest contest);
+  List<ContestProblem> findByContestOrderByLabelAsc(Contest contest);
 
   ContestProblem findByContestAndProblem(Contest contest, Problem problem);
 

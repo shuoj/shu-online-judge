@@ -29,6 +29,8 @@ public class ContestProblem {
   @JoinColumn(name = "problem_id")
   private Problem problem;
 
+  private String label;
+
   private Integer acceptCount = 0;
 
   private Integer submitCount = 0;
