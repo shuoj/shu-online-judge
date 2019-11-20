@@ -16,7 +16,7 @@ public class TimeCost {
   @Column(length = 40)
   private String id = UUID.randomUUID().toString();
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   private ContestProblem contestProblem;
 
@@ -35,6 +35,14 @@ public class TimeCost {
   @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   private RankingUser rankingUser;
+
+  public TimeCost() {
+  }
+
+  public TimeCost(ContestProblem contestProblem, RankingUser rankingUser) {
+    this.contestProblem = contestProblem;
+    this.rankingUser = rankingUser;
+  }
 
   public void addTotalTime(Long milliseconds) {
     this.totalTime += milliseconds;

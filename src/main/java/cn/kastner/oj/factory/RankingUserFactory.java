@@ -1,10 +1,9 @@
 package cn.kastner.oj.factory;
 
-import cn.kastner.oj.domain.*;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import cn.kastner.oj.domain.Contest;
+import cn.kastner.oj.domain.Group;
+import cn.kastner.oj.domain.RankingUser;
+import cn.kastner.oj.domain.User;
 
 public final class RankingUserFactory {
 
@@ -12,7 +11,6 @@ public final class RankingUserFactory {
   }
 
   public static RankingUser create(User user, Contest contest, Group group) {
-    Set<ContestProblem> contestProblemSet = contest.getContestProblemSet();
     RankingUser rankingUser = new RankingUser();
     rankingUser.setContest(contest);
     rankingUser.setUser(user);
@@ -21,17 +19,6 @@ public final class RankingUserFactory {
       rankingUser.setGroupId(group.getId());
       rankingUser.setTeacherId(group.getAuthor().getId());
     }
-
-    // initialize timeCostList
-    List<TimeCost> timeCostList = new ArrayList<>();
-    for (ContestProblem contestProblem : contestProblemSet) {
-
-      TimeCost timeCost = new TimeCost();
-      timeCost.setContestProblem(contestProblem);
-      timeCost.setRankingUser(rankingUser);
-      timeCostList.add(timeCost);
-    }
-    rankingUser.setTimeList(timeCostList);
 
     // process exclude rankingUser
     if (!contest.getUserListExcluded().contains(user)) {

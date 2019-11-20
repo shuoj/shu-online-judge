@@ -11,6 +11,7 @@ import cn.kastner.oj.dto.*;
 import cn.kastner.oj.exception.ContestException;
 import cn.kastner.oj.exception.ProblemException;
 import cn.kastner.oj.factory.RankingUserFactory;
+import cn.kastner.oj.factory.TimeCostFactory;
 import cn.kastner.oj.query.ContestQuery;
 import cn.kastner.oj.query.RankingQuery;
 import cn.kastner.oj.repository.*;
@@ -246,13 +247,15 @@ public class ContestServiceImpl implements ContestService {
     for (Group group : groupList) {
       for (User user : group.getUserSet()) {
         if (!userSet.contains(user)) {
-          RankingUser rankingUser = RankingUserFactory.create(user, contest, group);
-          timeCostRepository.saveAll(rankingUser.getTimeList());
+          RankingUser rankingUser =
+              rankingUserRepository.save(RankingUserFactory.create(user, contest, group));
+          List<TimeCost> timeCostList = TimeCostFactory.createList(contest, rankingUser);
+          timeCostRepository.saveAll(timeCostList);
           addRankingUserList.add(rankingUser);
         }
       }
     }
-    return mapper.toRankingUserDTOs(rankingUserRepository.saveAll(addRankingUserList));
+    return mapper.toRankingUserDTOs(addRankingUserList);
   }
 
   @Override
@@ -280,12 +283,13 @@ public class ContestServiceImpl implements ContestService {
     List<User> userList = userRepository.findAllById(userIdList);
     for (User user : userList) {
       if (!userSet.contains(user)) {
-        RankingUser rankingUser = RankingUserFactory.create(user, contest, null);
-        timeCostRepository.saveAll(rankingUser.getTimeList());
+        RankingUser rankingUser =
+            rankingUserRepository.save(RankingUserFactory.create(user, contest, null));
+        timeCostRepository.saveAll(TimeCostFactory.createList(contest, rankingUser));
         addRankingUserList.add(rankingUser);
       }
     }
-    return mapper.toRankingUserDTOs(rankingUserRepository.saveAll(addRankingUserList));
+    return mapper.toRankingUserDTOs(addRankingUserList);
   }
 
   @Override
@@ -572,9 +576,9 @@ public class ContestServiceImpl implements ContestService {
             .map(RankingUser::getUser)
             .collect(Collectors.toSet());
     if (!userSet.contains(user)) {
-      RankingUser rankingUser = RankingUserFactory.create(user, contest, null);
-      timeCostRepository.saveAll(rankingUser.getTimeList());
-      rankingUserRepository.save(rankingUser);
+      RankingUser rankingUser =
+          rankingUserRepository.save(RankingUserFactory.create(user, contest, null));
+      timeCostRepository.saveAll(TimeCostFactory.createList(contest, rankingUser));
     }
   }
 
