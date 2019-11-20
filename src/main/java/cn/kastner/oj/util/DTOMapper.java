@@ -8,9 +8,7 @@ import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Mapper(componentModel = "spring")
 public interface DTOMapper {
@@ -130,7 +128,13 @@ public interface DTOMapper {
 
   TimeCostDTO entityToDTO(TimeCost timeCost);
 
-  List<TimeCostDTO> toTimeCostDTOs(List<TimeCost> timeCostList);
+  default Map<String, TimeCostDTO> toLabelTimeCostDTOs(List<TimeCost> timeCostList) {
+    Map<String, TimeCostDTO> labelTimeCostDTO = new HashMap<>();
+    for (TimeCost timeCost : timeCostList) {
+      labelTimeCostDTO.put(timeCost.getContestProblem().getLabel(), entityToDTO(timeCost));
+    }
+    return labelTimeCostDTO;
+  }
 
   @Mapping(target = "authorName", source = "author.username")
   @Mapping(target = "contestId", source = "contest.id")

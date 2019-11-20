@@ -54,7 +54,7 @@ public class RankingComputingTask {
       for (int i = 0; i < rankingUserList.size(); i++) {
         RankingUser rankingUser = rankingUserList.get(i);
         List<TimeCost> timeCostList = timeCostRepository.findByRankingUser(rankingUser);
-        redisTemplate.opsForValue().set("timeCostList:" + rankingUser.getId(), mapper.toTimeCostDTOs(timeCostList));
+        redisTemplate.opsForValue().set("timeCostList:" + rankingUser.getId(), mapper.toLabelTimeCostDTOs(timeCostList));
         rankingUser.setRankingNumber(i);
         if (!rankingUser.getRanked()) {
           i--;

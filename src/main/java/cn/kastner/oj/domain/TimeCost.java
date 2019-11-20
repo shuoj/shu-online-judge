@@ -16,7 +16,7 @@ public class TimeCost {
   @Column(length = 40)
   private String id = UUID.randomUUID().toString();
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @NotFound(action = NotFoundAction.IGNORE)
   private ContestProblem contestProblem;
 
