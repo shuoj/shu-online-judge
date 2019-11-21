@@ -1,12 +1,13 @@
 package cn.kastner.oj.util;
 
 import cn.kastner.oj.domain.*;
+import cn.kastner.oj.domain.enums.ContestStatus;
+import cn.kastner.oj.domain.enums.ContestType;
 import cn.kastner.oj.domain.log.AuthLog;
 import cn.kastner.oj.domain.security.SecurityQuestion;
+import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.*;
-import org.mapstruct.InheritInverseConfiguration;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.mapstruct.*;
 
 import java.util.*;
 
@@ -26,6 +27,18 @@ public interface DTOMapper {
   @Mapping(target = "problemTitle", source = "problem.title")
   @Mapping(target = "contestId", source = "contest.id")
   SubmissionDTO entityToDTO(Submission submission);
+
+  @AfterMapping
+  default void beforeMappingSubmission(@MappingTarget SubmissionDTO target, Submission source) {
+    User user = UserContext.getCurrentUser();
+    Contest contest = source.getContest();
+    if (contest.getContestType().equals(ContestType.OI) && !contest.getStatus().equals(ContestStatus.ENDED) && !user.isAdminOrStuff()) {
+      target.setResult(null);
+      target.setDuration(null);
+      target.setMemory(null);
+      target.setResultDetail(null);
+    }
+  }
 
   @InheritInverseConfiguration
   @Mapping(target = "createDate", ignore = true)
@@ -118,7 +131,6 @@ public interface DTOMapper {
   @Mapping(target = "contestId", source = "id")
   @Mapping(target = "contestName", source = "name")
   RankingDTO contestToRankingDTO(Contest contest);
-
 
   @Mapping(target = "userName", source = "user.username")
   @Mapping(target = "userId", source = "user.id")

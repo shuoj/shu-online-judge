@@ -177,7 +177,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         contestRepository
             .findById(submissionDTO.getContestId())
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
-    boolean isNOIP = contest.getJudgeType().equals(JudgeType.IMMEDIATELY);
+    boolean isICPC = contest.getContestType().equals(ContestType.ICPC);
     Optional<RankingUser> rankingUserOptional = rankingUserRepository.findByContestAndUser(contest, user);
     if (!user.isAdmin()) {
       requireContestUser(contest, rankingUserOptional);
@@ -213,7 +213,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
       double score = 0.0;
 
-      if (!isNOIP) {
+      if (!isICPC) {
         score =
             contestProblem.getScore()
                 * (double) judgeResult.getPassedCount()
@@ -221,11 +221,11 @@ public class SubmissionServiceImpl implements SubmissionService {
       }
 
       // if problem has been passed, the submission won't produce any effects on ranking
-      if ((isNOIP && !timeCost.getPassed()) || (!isNOIP && score > timeCost.getScore())) {
+      if ((isICPC && !timeCost.getPassed()) || (!isICPC && score > timeCost.getScore())) {
 
         rankingUser.addTime(duration);
         rankingUser.increaseSubmitCount();
-        if (!isNOIP) {
+        if (!isICPC) {
           rankingUser.addScore(score - timeCost.getScore());
         }
 
@@ -233,7 +233,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         timeCost.setTotalTime(duration);
         timeCost.setSubmitted(true);
-        if (!isNOIP) {
+        if (!isICPC) {
           timeCost.setScore(score);
         }
 
@@ -561,7 +561,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
   private void requireContestUser(Contest contest, Optional<RankingUser> rankingUserOptional) throws ContestException {
     if (!rankingUserOptional.isPresent()) {
-      ContestType type = contest.getContestType();
+      OpenType type = contest.getOpenType();
       switch (type) {
         case PUBLIC:
           throw new ContestException(ContestException.NOT_PUBLIC_CONTEST_USER);

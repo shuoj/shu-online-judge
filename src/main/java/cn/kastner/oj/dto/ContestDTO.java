@@ -26,6 +26,8 @@ public class ContestDTO {
   @NotBlank(message = "比赛描述不能为空")
   private String description;
 
+  private String openType;
+
   private String contestType;
 
   private String status;
@@ -42,6 +44,10 @@ public class ContestDTO {
 
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
   private LocalDateTime createDate;
+
+  private Boolean frozen;
+
+  private Long frozenOffset;
 
   private Boolean enable;
 

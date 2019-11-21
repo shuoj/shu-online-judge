@@ -6,4 +6,5 @@ import lombok.Data;
 public class RankingQuery {
   private String groupId;
   private String teacherId;
+  private Boolean realTime;
 }

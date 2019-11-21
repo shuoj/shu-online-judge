@@ -37,6 +37,8 @@ public class SubmissionDTO implements Serializable {
 
   private Integer duration;
 
+  private Integer memory;
+
   private String result;
 
   private String resultDetail;

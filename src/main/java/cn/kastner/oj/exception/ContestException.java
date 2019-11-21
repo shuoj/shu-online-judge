@@ -28,6 +28,8 @@ public class ContestException extends AppException {
 
   public static final String START_TIME_IS_AFTER_THAN_END_TIME = "开始时间晚于结束时间";
 
+  public static final String FROZEN_OFFSET_IS_LONGER_THAN_CONTEST_DURATION = "封榜时间晚于比赛结束时间";
+
   public static final String WRONG_CONTEST_TYPE = "此方法只有OI型比赛可调用";
 
   public static final String CAN_ONLY_CHANGE_FROM_NOT_STARTED = "比赛只可以从未开始改为开始";
@@ -102,6 +104,10 @@ public class ContestException extends AppException {
       case EXPORT_ERROR:
         this.code = -17;
         this.status = HttpStatus.INTERNAL_SERVER_ERROR;
+        break;
+      case FROZEN_OFFSET_IS_LONGER_THAN_CONTEST_DURATION:
+        this.code = -18;
+        this.status = HttpStatus.BAD_REQUEST;
         break;
       default:
         this.code = -1;

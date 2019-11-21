@@ -2,10 +2,7 @@ package cn.kastner.oj.service.impl;
 
 import cn.kastner.oj.constant.EntityName;
 import cn.kastner.oj.domain.*;
-import cn.kastner.oj.domain.enums.ContestOption;
-import cn.kastner.oj.domain.enums.ContestStatus;
-import cn.kastner.oj.domain.enums.ContestType;
-import cn.kastner.oj.domain.enums.JudgeType;
+import cn.kastner.oj.domain.enums.*;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.*;
 import cn.kastner.oj.exception.ContestException;
@@ -34,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.criteria.Predicate;
 import javax.transaction.Transactional;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -111,7 +109,16 @@ public class ContestServiceImpl implements ContestService {
       throw new ContestException(ContestException.START_TIME_IS_AFTER_THAN_END_TIME);
     }
 
+    if (contest.getFrozenOffset()
+        > Duration.between(contest.getStartDate(), contest.getEndDate()).toMillis()) {
+      throw new ContestException(ContestException.FROZEN_OFFSET_IS_LONGER_THAN_CONTEST_DURATION);
+    }
+
     requirePassword(contest);
+
+    if (contest.getContestType().equals(ContestType.OI)) {
+      contest.setFrozen(true);
+    }
 
     contest.setCreateDate(LocalDateTime.now());
     contest.setAuthor(user);
@@ -152,7 +159,7 @@ public class ContestServiceImpl implements ContestService {
     }
 
     if (!ContestStatus.PROCESSING.equals(contest.getStatus())) {
-      if (null != contestDTO.getName()) {
+      if (Strings.isNullOrEmpty(contestDTO.getName())) {
         Optional<Contest> contestOptional = contestRepository.findByName(contestDTO.getName());
         if (contestOptional.isPresent()
             && !contestOptional.get().getId().equals(contestDTO.getId())) {
@@ -161,20 +168,20 @@ public class ContestServiceImpl implements ContestService {
         contest.setName(contestDTO.getName());
       }
 
-      if (null != contestDTO.getCouldShare()) {
-        contest.setCouldShare(contestDTO.getCouldShare());
-      }
-
-      if (null != contestDTO.getContestType()) {
-        contest.setContestType(ContestType.valueOf(contestDTO.getContestType()));
+      if (Strings.isNullOrEmpty(contestDTO.getOpenType())) {
+        contest.setOpenType(OpenType.valueOf(contestDTO.getOpenType()));
         requirePassword(contest);
       }
 
-      if (null != contestDTO.getJudgeType()) {
+      if (Strings.isNullOrEmpty(contestDTO.getContestType())) {
+        contest.setContestType(ContestType.valueOf(contestDTO.getContestType()));
+      }
+
+      if (Strings.isNullOrEmpty(contestDTO.getJudgeType())) {
         contest.setJudgeType(JudgeType.valueOf(contestDTO.getJudgeType()));
       }
 
-      if (null != contestDTO.getDescription()) {
+      if (Strings.isNullOrEmpty(contestDTO.getDescription())) {
         contest.setDescription(contestDTO.getDescription());
       }
 
@@ -182,13 +189,26 @@ public class ContestServiceImpl implements ContestService {
         contest.setStartDate(contestDTO.getStartDate());
       }
 
-      if (null != contestDTO.getPassword()) {
+      if (Strings.isNullOrEmpty(contestDTO.getPassword())) {
         contest.setPassword(contestDTO.getPassword());
       }
+
+      if (null != contestDTO.getFrozenOffset()) {
+        contest.setFrozenOffset(contestDTO.getFrozenOffset());
+      }
+    }
+
+    if (null != contestDTO.getCouldShare()) {
+      contest.setCouldShare(contestDTO.getCouldShare());
     }
 
     if (null != contestDTO.getEndDate()) {
       contest.setEndDate(contestDTO.getEndDate());
+    }
+
+    Boolean visible = contestDTO.getVisible();
+    if (null != visible) {
+      contest.setVisible(visible);
     }
 
     contest.setAuthor(user);
@@ -219,9 +239,9 @@ public class ContestServiceImpl implements ContestService {
     Optional<RankingUser> rankingUserOptional =
         rankingUserRepository.findByContestAndUser(contest, user);
     if (!CommonUtil.isAdmin(user) && !rankingUserOptional.isPresent()) {
-      if (ContestType.SECRET_WITH_PASSWORD.equals(contest.getContestType())) {
+      if (OpenType.SECRET_WITH_PASSWORD.equals(contest.getOpenType())) {
         throw new ContestException(ContestException.NOT_PASS_CONTEST_USER);
-      } else if (ContestType.SECRET_WITHOUT_PASSWORD.equals(contest.getContestType())) {
+      } else if (OpenType.SECRET_WITHOUT_PASSWORD.equals(contest.getOpenType())) {
         throw new ContestException(ContestException.CANNOT_JOIN);
       }
     }
@@ -326,10 +346,9 @@ public class ContestServiceImpl implements ContestService {
                 criteriaBuilder.equal(root.get("status").as(ContestStatus.class), status));
           }
 
-          ContestType type = contestQuery.getType();
+          OpenType type = contestQuery.getType();
           if (null != type) {
-            predicateList.add(
-                criteriaBuilder.equal(root.get("contestType").as(ContestType.class), type));
+            predicateList.add(criteriaBuilder.equal(root.get("openType").as(OpenType.class), type));
           }
 
           if (!CommonUtil.isAdmin(user)) {
@@ -422,7 +441,7 @@ public class ContestServiceImpl implements ContestService {
             .findById(contestId)
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
 
-    if (!contest.getJudgeType().equals(JudgeType.DELAY)) {
+    if (!contest.getContestType().equals(ContestType.OI)) {
       throw new ContestException(ContestException.WRONG_CONTEST_TYPE);
     }
 
@@ -553,7 +572,7 @@ public class ContestServiceImpl implements ContestService {
             .findById(id)
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
 
-    switch (contest.getContestType()) {
+    switch (contest.getOpenType()) {
       case PUBLIC:
         addUserToRanking(contest, user);
         break;
@@ -589,49 +608,63 @@ public class ContestServiceImpl implements ContestService {
       throw new ContestException(ContestException.NO_SUCH_CONTEST);
     }
     Contest contest = contestOptional.get();
-    RankingDTO rankingDTO = new RankingDTO();
-    rankingDTO.setContestId(contest.getId());
-    rankingDTO.setContestName(contest.getName());
-    if (contest.getStatus() == ContestStatus.PROCESSING) {
-      List<RankingUserDTO> rankingUserList =
-          (List<RankingUserDTO>)
-              redisTemplate.opsForValue().get("rankingUserList:" + contest.getId());
-      for (RankingUserDTO rankingUserDTO :
-          rankingUserList == null ? new ArrayList<RankingUserDTO>() : rankingUserList) {
-        rankingUserDTO.setTimeList(
-            (Map<String, TimeCostDTO>)
-                redisTemplate.opsForValue().get("timeCostList:" + rankingUserDTO.getId()));
-      }
-      if (null != rankingUserList && !rankingUserList.isEmpty()) {
-        if (!Strings.isNullOrEmpty(query.getGroupId())) {
-          rankingUserList =
-              rankingUserList.stream()
-                  .filter(rankingUserDTO -> query.getGroupId().equals(rankingUserDTO.getGroupId()))
-                  .collect(Collectors.toList());
-        } else if (!Strings.isNullOrEmpty(query.getTeacherId())) {
-          rankingUserList =
-              rankingUserList.stream()
-                  .filter(
-                      rankingUserDTO -> query.getTeacherId().equals(rankingUserDTO.getTeacherId()))
-                  .collect(Collectors.toList());
-        }
-      }
-      rankingDTO.setRankingUserList(rankingUserList);
-      return rankingDTO;
-    } else if (contest.getStatus() == ContestStatus.ENDED) {
-      Set<RankingUser> rankingUserList = rankingUserRepository.findByContest(contest);
 
-      if (!rankingUserList.isEmpty()) {
-        rankingUserList = filterWithQuery(rankingUserList, query);
+    User user = UserContext.getCurrentUser();
+    if (contest.getStatus() == ContestStatus.PROCESSING) {
+      if (null != query.getRealTime() && query.getRealTime() && user.isAdminOrStuff()) {
+        return getRankingFromDataBase(contest, query);
       }
-      for (RankingUser ru : rankingUserList) {
-        ru.setTimeList(timeCostRepository.findByRankingUser(ru));
-      }
-      contest.setRankingUserList(rankingUserList);
-      return mapper.contestToRankingDTO(contest);
+      return getRankingFromCache(contest, query);
+
+    } else if (contest.getStatus() == ContestStatus.ENDED) {
+      return getRankingFromDataBase(contest, query);
     } else {
       throw new ContestException(ContestException.CONTEST_NOT_GOING);
     }
+  }
+
+  private RankingDTO getRankingFromDataBase(Contest contest, RankingQuery query) {
+    Set<RankingUser> rankingUserList = rankingUserRepository.findByContest(contest);
+
+    if (!rankingUserList.isEmpty()) {
+      rankingUserList = filterWithQuery(rankingUserList, query);
+    }
+    for (RankingUser ru : rankingUserList) {
+      ru.setTimeList(timeCostRepository.findByRankingUser(ru));
+    }
+    contest.setRankingUserList(rankingUserList);
+    return mapper.contestToRankingDTO(contest);
+  }
+
+  private RankingDTO getRankingFromCache(Contest contest, RankingQuery query) {
+    RankingDTO rankingDTO = new RankingDTO();
+    rankingDTO.setContestId(contest.getId());
+    rankingDTO.setContestName(contest.getName());
+    List<RankingUserDTO> rankingUserList =
+        (List<RankingUserDTO>)
+            redisTemplate.opsForValue().get("rankingUserList:" + contest.getId());
+    for (RankingUserDTO rankingUserDTO :
+        rankingUserList == null ? new ArrayList<RankingUserDTO>() : rankingUserList) {
+      rankingUserDTO.setTimeList(
+          (Map<String, TimeCostDTO>)
+              redisTemplate.opsForValue().get("timeCostList:" + rankingUserDTO.getId()));
+    }
+    if (null != rankingUserList && !rankingUserList.isEmpty()) {
+      if (!Strings.isNullOrEmpty(query.getGroupId())) {
+        rankingUserList =
+            rankingUserList.stream()
+                .filter(rankingUserDTO -> query.getGroupId().equals(rankingUserDTO.getGroupId()))
+                .collect(Collectors.toList());
+      } else if (!Strings.isNullOrEmpty(query.getTeacherId())) {
+        rankingUserList =
+            rankingUserList.stream()
+                .filter(
+                    rankingUserDTO -> query.getTeacherId().equals(rankingUserDTO.getTeacherId()))
+                .collect(Collectors.toList());
+      }
+    }
+    rankingDTO.setRankingUserList(rankingUserList);
+    return rankingDTO;
   }
 
   private Set<RankingUser> filterWithQuery(Set<RankingUser> rankingUserList, RankingQuery query) {
@@ -664,7 +697,7 @@ public class ContestServiceImpl implements ContestService {
     header.createCell(headerColumnNum++).setCellValue("排名");
     header.createCell(headerColumnNum++).setCellValue("学号");
     header.createCell(headerColumnNum++).setCellValue("姓名");
-    if (contest.getJudgeType() == JudgeType.IMMEDIATELY) {
+    if (contest.getContestType().equals(ContestType.ICPC)) {
       header.createCell(headerColumnNum++).setCellValue("提交数");
       header.createCell(headerColumnNum++).setCellValue("通过数");
     } else {
@@ -682,7 +715,7 @@ public class ContestServiceImpl implements ContestService {
       row.createCell(columnNum++).setCellValue(rankingUser.getRankingNumber());
       row.createCell(columnNum++).setCellValue(rankingUser.getUser().getStudentNumber());
       row.createCell(columnNum++).setCellValue(rankingUser.getUser().getName());
-      if (contest.getJudgeType() == JudgeType.IMMEDIATELY) {
+      if (contest.getContestType().equals(ContestType.ICPC)) {
         row.createCell(columnNum++).setCellValue(rankingUser.getAcceptCount());
         row.createCell(columnNum++).setCellValue(rankingUser.getSubmitCount());
       } else {
@@ -702,7 +735,7 @@ public class ContestServiceImpl implements ContestService {
       }
       List<TimeCost> timeCostList = timeCostRepository.findByRankingUser(rankingUser);
       for (TimeCost timeCost : timeCostList) {
-        if (contest.getJudgeType() == JudgeType.IMMEDIATELY) {
+        if (contest.getContestType().equals(ContestType.ICPC)) {
           row.createCell(columnNum++).setCellValue(timeCost.getPassed() ? 1 : 0);
         } else {
           row.createCell(columnNum++).setCellValue(timeCost.getScore());
@@ -713,7 +746,7 @@ public class ContestServiceImpl implements ContestService {
   }
 
   private void requirePassword(Contest contest) throws ContestException {
-    if (ContestType.SECRET_WITH_PASSWORD.equals(contest.getContestType())
+    if (OpenType.SECRET_WITH_PASSWORD.equals(contest.getOpenType())
         && contest.getPassword() == null) {
       throw new ContestException(ContestException.NO_PASS_PROVIDED);
     }

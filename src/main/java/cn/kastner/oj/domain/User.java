@@ -219,6 +219,16 @@ public class User {
     return false;
   }
 
+  public boolean isAdminOrStuff() {
+    for (Authority authority : authorities) {
+      if (AuthorityName.ROLE_ADMIN.equals(authority.getName())
+          || AuthorityName.ROLE_STUFF.equals(authority.getName())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (o == this) {

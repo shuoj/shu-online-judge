@@ -3,6 +3,7 @@ package cn.kastner.oj.domain;
 import cn.kastner.oj.domain.enums.ContestStatus;
 import cn.kastner.oj.domain.enums.ContestType;
 import cn.kastner.oj.domain.enums.JudgeType;
+import cn.kastner.oj.domain.enums.OpenType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
@@ -43,7 +44,10 @@ public class Contest {
   private String password;
 
   @Enumerated(EnumType.STRING)
-  private ContestType contestType = ContestType.PUBLIC;
+  private OpenType openType = OpenType.PUBLIC;
+
+  @Enumerated(EnumType.STRING)
+  private ContestType contestType = ContestType.ICPC;
 
   @Enumerated(EnumType.STRING)
   private JudgeType judgeType = JudgeType.IMMEDIATELY;
@@ -83,6 +87,11 @@ public class Contest {
       inverseJoinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")})
   @JsonIgnore
   private Set<User> userListExcluded = new HashSet<>();
+
+  /**
+   * 封榜时间
+   */
+  private Long frozenOffset = 4 * 60 * 60 * 1000L;
 
   private Boolean frozen = false;
   private Boolean enable = false;
