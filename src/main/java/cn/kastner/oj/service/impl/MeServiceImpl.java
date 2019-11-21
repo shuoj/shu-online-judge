@@ -55,12 +55,11 @@ public class MeServiceImpl implements MeService {
     String newPassword = changePasswordDTO.getNewPassword();
 
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-    String encodedOldPassword = encoder.encode(oldPassword);
-    if (!encodedOldPassword.equals(user.getPassword())) {
+    if (!encoder.matches(oldPassword, user.getPassword())) {
       throw new ValidateException(ValidateException.WRONG_OLD_PASSWORD);
     }
 
-    user.setPassword(encoder.encode(newPassword));
+    user.setPassword(newPassword);
     user.setLastPasswordResetDate(new Date());
     return userRepository.save(user);
   }

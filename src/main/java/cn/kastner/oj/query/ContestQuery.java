@@ -1,7 +1,7 @@
 package cn.kastner.oj.query;
 
-import cn.kastner.oj.domain.ContestStatus;
-import cn.kastner.oj.domain.ContestType;
+import cn.kastner.oj.domain.enums.ContestStatus;
+import cn.kastner.oj.domain.enums.ContestType;
 import lombok.Data;
 
 @Data

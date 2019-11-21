@@ -1,6 +1,6 @@
 package cn.kastner.oj.constant;
 
-import cn.kastner.oj.domain.Language;
+import cn.kastner.oj.domain.enums.Language;
 
 import java.util.HashMap;
 import java.util.Map;

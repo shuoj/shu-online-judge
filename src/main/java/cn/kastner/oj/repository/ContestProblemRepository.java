@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface ContestProblemRepository
     extends JpaRepository<ContestProblem, String>, JpaSpecificationExecutor<ContestProblem> {
-  List<ContestProblem> findByContest(Contest contest);
+  List<ContestProblem> findByContestOrderByLabelAsc(Contest contest);
 
   ContestProblem findByContestAndProblem(Contest contest, Problem problem);
 
@@ -21,4 +21,6 @@ public interface ContestProblemRepository
   void deleteAllByProblemAndContest(Iterable<Problem> problems, Contest contest);
 
   void deleteAllByContest(Contest contest);
+
+  Integer countByContest(Contest contest);
 }

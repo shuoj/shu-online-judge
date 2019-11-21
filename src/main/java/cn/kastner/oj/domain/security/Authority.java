@@ -1,6 +1,7 @@
 package cn.kastner.oj.domain.security;
 
 import cn.kastner.oj.domain.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -23,5 +24,7 @@ public class Authority {
   private AuthorityName name;
 
   @ManyToMany(mappedBy = "authorities")
+  @JsonIgnore
+  @Transient
   private List<User> userList;
 }

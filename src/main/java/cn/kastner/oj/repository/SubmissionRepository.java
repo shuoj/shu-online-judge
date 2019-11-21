@@ -1,6 +1,10 @@
 package cn.kastner.oj.repository;
 
-import cn.kastner.oj.domain.*;
+import cn.kastner.oj.domain.Contest;
+import cn.kastner.oj.domain.Problem;
+import cn.kastner.oj.domain.Submission;
+import cn.kastner.oj.domain.User;
+import cn.kastner.oj.domain.enums.Result;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -37,4 +41,6 @@ public interface SubmissionRepository
 
   List<Submission> findByContestAndProblemAndIsPracticeAndAuthorAndResult(
       Contest contest, Problem problem, Boolean isPractice, User author, Result result);
+
+  void deleteAllByContest(Contest contest);
 }

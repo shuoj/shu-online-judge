@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ public class Tag {
   @ManyToMany(mappedBy = "tagList", fetch = FetchType.LAZY)
   @Fetch(FetchMode.SUBSELECT)
   @JsonIgnore
+  @NotFound(action = NotFoundAction.IGNORE)
   private List<Problem> problemList;
 
   public Tag() {

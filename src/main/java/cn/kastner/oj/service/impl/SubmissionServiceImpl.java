@@ -3,6 +3,9 @@ package cn.kastner.oj.service.impl;
 import cn.kastner.oj.constant.CommonConstant;
 import cn.kastner.oj.constant.LanguageConfig;
 import cn.kastner.oj.domain.*;
+import cn.kastner.oj.domain.enums.*;
+import cn.kastner.oj.domain.pojos.JudgeResponse;
+import cn.kastner.oj.domain.pojos.JudgeResult;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.domain.stat.UserProblemStat;
 import cn.kastner.oj.domain.stat.UserTagStat;
@@ -91,7 +94,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         && !CommonUtil.isAdmin(user)
         && contest != null
         && !submission.getIsPractice()) {
-      requireContestUser(contest, user);
+      requireContestUser(contest, rankingUserRepository.findByContestAndUser(contest, user));
       requireBeforeFrozen(contest, submission);
     }
     return mapper.entityToDTO(submission);
@@ -107,7 +110,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     User user = UserContext.getCurrentUser();
 
     if (!CommonUtil.isAdmin(user)) {
-      requireContestUser(contest, user);
+      requireContestUser(contest, rankingUserRepository.findByContestAndUser(contest, user));
     }
 
     List<Submission> submissionList;
@@ -175,8 +178,9 @@ public class SubmissionServiceImpl implements SubmissionService {
             .findById(submissionDTO.getContestId())
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
     boolean isNOIP = contest.getJudgeType().equals(JudgeType.IMMEDIATELY);
-    if (!CommonUtil.isAdmin(user)) {
-      requireContestUser(contest, user);
+    Optional<RankingUser> rankingUserOptional = rankingUserRepository.findByContestAndUser(contest, user);
+    if (!user.isAdmin()) {
+      requireContestUser(contest, rankingUserOptional);
       requireContestOnGoing(contest);
     }
 
@@ -199,74 +203,43 @@ public class SubmissionServiceImpl implements SubmissionService {
     submission.setMemory(judgeResult.getMemory());
     submissionRepository.save(submission);
 
-    ContestProblem contestProblem =
-        contestProblemRepository.findByContestAndProblem(contest, problem);
-    Ranking ranking = contest.getRanking();
-    RankingUser rankingUser = rankingUserRepository.findByRankingAndUser(ranking, user);
+    if (rankingUserOptional.isPresent()) {
+      ContestProblem contestProblem =
+          contestProblemRepository.findByContestAndProblem(contest, problem);
+      RankingUser rankingUser = rankingUserOptional.get();
 
-    TimeCost timeCostAfter =
-        timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
-            rankingUser, contestProblem, false);
-    double score = contestProblem.getScore() * (double) judgeResult.getPassedCount() / judgeResult.getTotalCount();
-    // if problem has been passed, the submission won't produce any effects on ranking
-    if ((isNOIP && !timeCostAfter.getPassed()) || (!isNOIP && score > timeCostAfter.getScore())) {
+      TimeCost timeCost =
+          timeCostRepository.findByRankingUserAndContestProblem(rankingUser, contestProblem);
 
-      TimeCost timeCostTotalAfter =
-          timeCostRepository.findByRankingUserAndContestProblemIsNullAndFrozen(rankingUser, false);
-      timeCostTotalAfter.addTotalTime(duration);
-      timeCostTotalAfter.addScore(score - timeCostAfter.getScore());
+      double score = 0.0;
 
-      rankingUser.addSubmitCountAfter(1);
-      contestProblem.addSubmitCountAfter(1);
-      timeCostAfter.setTotalTime(duration);
-      timeCostAfter.setSubmitted(true);
-      timeCostAfter.setScore(score);
-      if (submission.getResult() == Result.ACCEPTED) {
-        rankingUser.addAcceptCountAfter(1);
-        contestProblem.addAcceptCountAfter(1);
-        if (contestProblem.getFirstSubmission() == null) {
-          contestProblem.setFirstSubmission(submission);
-          timeCostAfter.setFirstPassed(true);
-        }
-        if (!timeCostAfter.getPassed()) {
-          timeCostAfter.setPassed(true);
-        }
-      } else {
-        if (!timeCostAfter.getPassed()) {
-          timeCostAfter.addErrorCount(1);
-          timeCostTotalAfter.addTotalTime(Duration.ofMinutes(30).toMillis());
-        }
+      if (!isNOIP) {
+        score =
+            contestProblem.getScore()
+                * (double) judgeResult.getPassedCount()
+                / judgeResult.getTotalCount();
       }
 
-      contestProblem.computeAcceptRateAfter();
-      timeCostRepository.save(timeCostAfter);
-      timeCostRepository.save(timeCostTotalAfter);
+      // if problem has been passed, the submission won't produce any effects on ranking
+      if ((isNOIP && !timeCost.getPassed()) || (!isNOIP && score > timeCost.getScore())) {
 
-      if (!contest.isRankingFrozen()) {
+        rankingUser.addTime(duration);
+        rankingUser.increaseSubmitCount();
+        if (!isNOIP) {
+          rankingUser.addScore(score - timeCost.getScore());
+        }
 
-        rankingUser.addSubmitCountBefore(1);
-        contestProblem.addSubmitCountBefore(1);
-
-        TimeCost timeCost =
-            timeCostRepository.findByRankingUserAndContestProblemAndFrozen(
-                rankingUser, contestProblem, true);
-
-        TimeCost timeCostTotal =
-            timeCostRepository.findByRankingUserAndContestProblemIsNullAndFrozen(rankingUser, true);
-        timeCostTotal.addTotalTime(duration);
-        timeCostTotal.addScore(score - timeCost.getScore());
+        contestProblem.increaseSubmitCount();
 
         timeCost.setTotalTime(duration);
         timeCost.setSubmitted(true);
-        timeCost.setScore(score);
-
-
+        if (!isNOIP) {
+          timeCost.setScore(score);
+        }
 
         if (submission.getResult() == Result.ACCEPTED) {
-
-          rankingUser.addAcceptCountBefore(1);
-          contestProblem.addAcceptCountBefore(1);
-
+          rankingUser.increaseAcceptCount();
+          contestProblem.increaseAcceptCount();
           if (contestProblem.getFirstSubmission() == null) {
             contestProblem.setFirstSubmission(submission);
             timeCost.setFirstPassed(true);
@@ -276,24 +249,21 @@ public class SubmissionServiceImpl implements SubmissionService {
           }
         } else {
           if (!timeCost.getPassed()) {
-            timeCost.addErrorCount(1);
-            timeCostTotal.addTotalTime(Duration.ofMinutes(30).toMillis());
+            timeCost.increaseErrorCount();
+            rankingUser.addTime(Duration.ofMinutes(30).toMillis());
           }
         }
 
-        contestProblem.computeAcceptRateBefore();
-
+        contestProblem.computeAcceptRate();
         timeCostRepository.save(timeCost);
-        timeCostRepository.save(timeCostTotal);
+        rankingUserRepository.save(rankingUser);
+        contestProblemRepository.save(contestProblem);
       }
-
-      rankingUserRepository.save(rankingUser);
-      contestProblemRepository.save(contestProblem);
     }
 
-    //    submissionCounter(submission, user);
-    return mapper.entityToDTO(submissionRepository.save(submission));
+    return mapper.entityToDTO(submission);
   }
+
 
   @Override
   public SubmissionDTO createPracticeSubmission(SubmissionDTO submissionDTO)
@@ -589,9 +559,8 @@ public class SubmissionServiceImpl implements SubmissionService {
     return result;
   }
 
-  private void requireContestUser(Contest contest, User user) throws ContestException {
-    Set<User> userList = contest.getUserSet();
-    if (!userList.contains(user)) {
+  private void requireContestUser(Contest contest, Optional<RankingUser> rankingUserOptional) throws ContestException {
+    if (!rankingUserOptional.isPresent()) {
       ContestType type = contest.getContestType();
       switch (type) {
         case PUBLIC:

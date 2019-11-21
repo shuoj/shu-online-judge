@@ -2,6 +2,7 @@ package cn.kastner.oj.controller;
 
 import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.SecurityQuestionDTO;
+import cn.kastner.oj.dto.UserDTO;
 import cn.kastner.oj.exception.AppException;
 import cn.kastner.oj.exception.AuthenticationException;
 import cn.kastner.oj.exception.NoSuchItemException;
@@ -59,13 +60,11 @@ public class AuthenticationRestController {
   }
 
   /**
-   * @param username 用户名
-   * @param password 密码
    * @return { "token": "..." }
    * @throws AuthenticationException 认证失败
    */
   @PostMapping(value = "/api/v1/auth")
-  public ResponseEntity<?> createAuthenticationToken(
+  public ResponseEntity createAuthenticationToken(
       @RequestBody JwtAuthenticationRequest authenticationRequest) throws AuthenticationException {
     final String token =
         authenticationService.login(
@@ -75,7 +74,7 @@ public class AuthenticationRestController {
   }
 
   @GetMapping(value = "/api/v1/refresh")
-  public ResponseEntity<?> refreshAndGetAuthenticationToken(HttpServletRequest request) {
+  public ResponseEntity refreshAndGetAuthenticationToken(HttpServletRequest request) {
     String authToken = request.getHeader(tokenHeader);
     final String token = authToken.substring(7);
     String username = jwtTokenUtil.getUsernameFromToken(token);
@@ -90,12 +89,12 @@ public class AuthenticationRestController {
   }
 
   @PostMapping(value = "/api/v1/register")
-  public JwtUser register(@Validated @RequestBody User addedUser, BindingResult result)
+  public JwtUser register(@Validated @RequestBody UserDTO userDTO, BindingResult result)
       throws AppException {
     if (result.hasFieldErrors()) {
       throw new ValidateException(result.getFieldError().getDefaultMessage());
     }
-    User user = authenticationService.register(addedUser);
+    User user = authenticationService.register(userDTO);
     return JwtUserFactory.create(user);
   }
 

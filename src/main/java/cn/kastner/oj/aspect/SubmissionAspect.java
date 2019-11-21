@@ -1,6 +1,7 @@
 package cn.kastner.oj.aspect;
 
 import cn.kastner.oj.domain.*;
+import cn.kastner.oj.domain.enums.Result;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.SubmissionDTO;
 import cn.kastner.oj.exception.AppException;

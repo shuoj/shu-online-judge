@@ -2,7 +2,7 @@ package cn.kastner.oj.dto;
 
 import lombok.Data;
 
-import java.util.List;
+import java.util.Map;
 
 @Data
 public class RankingUserDTO {
@@ -17,11 +17,21 @@ public class RankingUserDTO {
 
   private Integer submitCount;
 
-  private TimeCostDTO totalTime;
+  private Integer passedCount;
 
-  private List<TimeCostDTO> timeList;
+  private Integer errorCount;
+
+  private Long time;
+
+  private Double score;
+
+  private Map<String, TimeCostDTO> timeList;
 
   private Boolean ranked;
 
-  private Long rank;
+  private Integer rankingNumber;
+
+  private String teacherId;
+
+  private String groupId;
 }

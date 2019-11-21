@@ -1,5 +1,6 @@
 package cn.kastner.oj.domain;
 
+import cn.kastner.oj.domain.enums.Difficulty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
@@ -46,12 +47,12 @@ public class Problem {
 
   @Fetch(FetchMode.SELECT)
   @ManyToMany(
-      fetch = FetchType.EAGER,
-      cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+      fetch = FetchType.EAGER)
   @JoinTable(
       name = "problem_tag",
       joinColumns = {@JoinColumn(name = "problem_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "tag_id", referencedColumnName = "id")})
+  @JsonIgnore
   private Set<Tag> tagList = new HashSet<>();
 
   @Column(columnDefinition = "TEXT")
@@ -86,7 +87,7 @@ public class Problem {
   private Integer submitCount = 0;
   private Double acceptRate = 0.0;
   private LocalDateTime createDate = LocalDateTime.now();
-  private LocalDateTime lastUsedDate = LocalDateTime.now();
+  private LocalDateTime lastUsedDate;
   private LocalDateTime modifiedDate = LocalDateTime.now();
   private Integer testCaseCount = 0;
 

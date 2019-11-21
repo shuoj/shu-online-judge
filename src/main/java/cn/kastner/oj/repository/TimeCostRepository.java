@@ -10,18 +10,12 @@ import java.util.List;
 
 public interface TimeCostRepository
     extends JpaRepository<TimeCost, String>, JpaSpecificationExecutor<TimeCost> {
-  TimeCost findByRankingUserAndContestProblemAndFrozen(
-      RankingUser rankingUser, ContestProblem contestProblem, Boolean frozen);
 
-  TimeCost findByRankingUserAndContestProblemIsNullAndFrozen(
-      RankingUser rankingUser, Boolean frozen);
-
-  List<TimeCost> findByRankingUserAndFrozen(RankingUser rankingUser, Boolean frozen);
-
-  List<TimeCost> findByRankingUserAndContestProblemIsNotNullAndFrozen(
-      RankingUser rankingUser, Boolean frozen);
+  TimeCost findByRankingUserAndContestProblem(RankingUser rankingUser, ContestProblem contestProblem);
 
   List<TimeCost> findByRankingUser(RankingUser rankingUser);
 
-  void deleteByRankingUser(RankingUser rankingUser);
+  void deleteAllByRankingUser(RankingUser rankingUser);
+
+  void deleteAllByContestProblem(Iterable<ContestProblem> contestProblems);
 }

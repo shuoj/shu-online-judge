@@ -1,5 +1,7 @@
 package cn.kastner.oj.domain;
 
+import cn.kastner.oj.domain.enums.Language;
+import cn.kastner.oj.domain.enums.Result;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;

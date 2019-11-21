@@ -2,6 +2,8 @@ package cn.kastner.oj.query;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class UserQuery {
 
@@ -16,4 +18,6 @@ public class UserQuery {
   private Boolean temporary;
 
   private String school;
+
+  private List<String> role;
 }

@@ -1,8 +1,11 @@
 package cn.kastner.oj.controller;
 
 import cn.kastner.oj.dto.GroupDTO;
-import cn.kastner.oj.exception.*;
-import cn.kastner.oj.repository.UserRepository;
+import cn.kastner.oj.dto.PageDTO;
+import cn.kastner.oj.exception.AppException;
+import cn.kastner.oj.exception.GroupException;
+import cn.kastner.oj.exception.ValidateException;
+import cn.kastner.oj.query.GroupQuery;
 import cn.kastner.oj.security.JwtUser;
 import cn.kastner.oj.service.GroupService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +22,6 @@ public class GroupRestController {
 
   private final GroupService groupService;
 
-
   @Autowired
   public GroupRestController(GroupService groupService) {
     this.groupService = groupService;
@@ -27,38 +29,23 @@ public class GroupRestController {
 
   /**
    * 获取指定群组
-   *
-   * @param id
-   * @throws NoSuchItemException return groupDTO
    */
   @GetMapping(value = "/{id}")
   public GroupDTO getGroup(@PathVariable String id) throws GroupException {
     return groupService.findById(id);
   }
 
-  /**
-   * 获取所有群组
-   *
-   * @return
-   * @throws NoSuchItemException
-   */
+  /** 条件查询群组 */
   @GetMapping
-  public List<GroupDTO> getGroups() throws GroupException {
-    return groupService.findAllGroups();
+  public PageDTO<GroupDTO> findCriteria(GroupQuery query, @RequestParam(defaultValue = "0") Integer page, @RequestParam(defaultValue = "10") Integer size) {
+    return groupService.findCriteria(query, page, size);
   }
 
-  /**
-   * 创建群组
-   *
-   * @param groupDTO
-   * @param bindingResult
-   * @return groupDTO
-   */
+  /** 创建群组 */
   @PostMapping
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public GroupDTO createGroup(
-      @Validated @RequestBody GroupDTO groupDTO, BindingResult bindingResult)
-      throws AppException {
+      @Validated @RequestBody GroupDTO groupDTO, BindingResult bindingResult) throws AppException {
     if (bindingResult.hasErrors()) {
       throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
     } else {
@@ -66,14 +53,7 @@ public class GroupRestController {
     }
   }
 
-  /**
-   * 更新群组信息
-   *
-   * @param groupDTO
-   * @param bindingResult
-   * @param id
-   * @return
-   */
+  /** 更新群组信息 */
   @PutMapping(value = "/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public GroupDTO updateGroup(
@@ -90,27 +70,14 @@ public class GroupRestController {
     }
   }
 
-  /**
-   * 删除指定群组
-   *
-   * @param id
-   * @return
-   * @throws NoSuchItemException
-   */
+  /** 删除指定群组 */
   @DeleteMapping(value = "/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public GroupDTO deleteGroup(@PathVariable String id) throws AppException {
     return groupService.delete(id);
   }
 
-  /**
-   * 添加指定群组成员（由管理员批量添加）
-   *
-   * @param usersId
-   * @param bindingResult
-   * @param id
-   * @return
-   */
+  /** 添加指定群组成员（由管理员批量添加） */
   @PostMapping(value = "/{id}/members")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<JwtUser> addMembers(
@@ -125,16 +92,7 @@ public class GroupRestController {
     return groupService.addMembers(id, usersId);
   }
 
-  /**
-   * 删除指定群组内的成员（由管理员批量删除）
-   *
-   * @param usersId
-   * @param bindingResult
-   * @param id
-   * @return
-   * @throws ValidateException
-   * @throws NoSuchItemException
-   */
+  /** 删除指定群组内的成员（由管理员批量删除） */
   @DeleteMapping(value = "/{id}/members")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public List<JwtUser> deleteMembers(

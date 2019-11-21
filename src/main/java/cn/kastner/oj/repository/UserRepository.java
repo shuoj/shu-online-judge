@@ -14,6 +14,14 @@ public interface UserRepository
 
   Optional<User> findUserByUsername(String username);
 
+  boolean existsByUsername(String username);
+
+  boolean existsByUsernameAndIdIsNot(String username, String id);
+
+  boolean existsByEmail(String email);
+
+  boolean existsByEmailAndIdIsNot(String email, String id);
+
   List<User> findByUsernameContaining(String username, Pageable pageable);
 
   Optional<User> findByEmail(String email);

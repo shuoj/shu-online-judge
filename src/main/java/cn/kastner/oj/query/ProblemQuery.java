@@ -1,6 +1,6 @@
 package cn.kastner.oj.query;
 
-import cn.kastner.oj.domain.Difficulty;
+import cn.kastner.oj.domain.enums.Difficulty;
 import lombok.Data;
 
 import java.time.LocalDateTime;

@@ -1,9 +1,14 @@
 package cn.kastner.oj.domain;
 
+import cn.kastner.oj.domain.enums.ContestStatus;
+import cn.kastner.oj.domain.enums.ContestType;
+import cn.kastner.oj.domain.enums.JudgeType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.persistence.*;
@@ -20,7 +25,7 @@ public class Contest {
 
   @Id
   @Column(length = 40)
-  private String id;
+  private String id = UUID.randomUUID().toString();
 
   @Column(updatable = false, unique = true, nullable = false)
   private Long idx;
@@ -38,15 +43,12 @@ public class Contest {
   private String password;
 
   @Enumerated(EnumType.STRING)
-  private ContestType contestType;
+  private ContestType contestType = ContestType.PUBLIC;
 
   @Enumerated(EnumType.STRING)
-  private JudgeType judgeType;
+  private JudgeType judgeType = JudgeType.IMMEDIATELY;
 
-  @OneToOne(cascade = CascadeType.ALL)
-  private Ranking ranking;
-
-  private Boolean realTimeRank;
+  private Boolean realTimeRank = true;
   private LocalDateTime startDate;
   private LocalDateTime endDate;
   private LocalDateTime createDate;
@@ -54,45 +56,42 @@ public class Contest {
   @Fetch(FetchMode.SUBSELECT)
   @OneToMany(mappedBy = "contest")
   @JsonIgnore
+  @NotFound(action = NotFoundAction.IGNORE)
   private List<Submission> submissionList;
 
   @OneToMany(mappedBy = "contest")
   @JsonIgnore
-  private Set<ContestProblem> contestProblemSet;
+  private Set<ContestProblem> contestProblemSet = new HashSet<>();
 
   @OneToMany(mappedBy = "contest")
   @JsonIgnore
   private List<Clarification> clarificationList;
 
-  @ManyToMany(fetch = FetchType.EAGER)
-  @Fetch(FetchMode.SELECT)
+  @OneToMany(
+      mappedBy = "contest",
+      fetch = FetchType.LAZY)
+  @Fetch(FetchMode.SUBSELECT)
+  @JsonIgnore
+  @Transient
+  private Set<RankingUser> rankingUserList = new HashSet<>();
+
+  @Fetch(FetchMode.SUBSELECT)
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
-      name = "contest_user",
+      name = "contest_excluded_user",
       joinColumns = {@JoinColumn(name = "contest_id", referencedColumnName = "id")},
       inverseJoinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")})
-  private Set<User> userSet;
+  @JsonIgnore
+  private Set<User> userListExcluded = new HashSet<>();
 
-  private Boolean frozen;
-  private Boolean enable;
-  private Boolean visible;
+  private Boolean frozen = false;
+  private Boolean enable = false;
+  private Boolean visible = false;
 
   @Enumerated(EnumType.STRING)
-  private ContestStatus status;
+  private ContestStatus status = ContestStatus.NOT_STARTED;
 
-  private Boolean couldShare;
-
-  public Contest() {
-    this.id = UUID.randomUUID().toString();
-    this.contestType = ContestType.PUBLIC;
-    this.judgeType = JudgeType.IMMEDIATELY;
-    this.realTimeRank = true;
-    this.contestProblemSet = new HashSet<>();
-    this.userSet = new HashSet<>();
-    this.visible = false;
-    this.enable = false;
-    this.status = ContestStatus.NOT_STARTED;
-    this.couldShare = true;
-  }
+  private Boolean couldShare = true;
 
   public void setPassword(String password) {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();

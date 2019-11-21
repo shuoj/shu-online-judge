@@ -18,6 +18,8 @@ public class ProblemDTO {
 
   private Long idx;
 
+  private String label;
+
   private String authorId;
 
   private String authorName;

@@ -5,6 +5,7 @@ import cn.kastner.oj.domain.User;
 import cn.kastner.oj.domain.security.Authority;
 import cn.kastner.oj.domain.security.AuthorityName;
 import cn.kastner.oj.dto.PageDTO;
+import cn.kastner.oj.dto.UserDTO;
 import cn.kastner.oj.exception.FileException;
 import cn.kastner.oj.exception.GroupException;
 import cn.kastner.oj.exception.UserException;
@@ -113,17 +114,31 @@ public class UserServiceImpl implements UserService {
             predicateList.add(criteriaBuilder.equal(root.get("temporary"), temporary));
           }
 
+          List<String> roleList = userQuery.getRole();
+          if (null != roleList && !roleList.isEmpty()) {
+            List<Predicate> subPredicateList = new ArrayList<>();
+            for (String role : roleList) {
+              Authority authority = authorityRepository.findByName(AuthorityName.valueOf(role));
+              if (authority == null) {
+                return null;
+              }
+              subPredicateList.add(criteriaBuilder.isMember(authority, root.get("authorities")));
+            }
+            Predicate[] subPredicates = new Predicate[subPredicateList.size()];
+            predicateList.add(criteriaBuilder.or(subPredicateList.toArray(subPredicates)));
+          }
+
           Predicate[] predicates = new Predicate[predicateList.size()];
           return criteriaBuilder.and(predicateList.toArray(predicates));
         });
 
+    if (null == us) {
+      return new PageDTO<>(page, 0, 0L, new ArrayList<>());
+    }
+
     List<User> userList = userRepository.findAll(us, pageable).getContent();
     long count = userRepository.count(us);
-    List<JwtUser> jwtUserList = new ArrayList<>();
-    for (User user : userList) {
-      jwtUserList.add(JwtUserFactory.create(user));
-    }
-    return new PageDTO<>(page, jwtUserList.size(), count, jwtUserList);
+    return new PageDTO<>(page, userList.size(), count, JwtUserFactory.createList(userList));
   }
 
   @Override
@@ -136,95 +151,88 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public JwtUser create(User user) throws UserException {
+  public JwtUser create(UserDTO userDTO) throws UserException {
 
-    final String username = user.getUsername();
-    Optional<User> userOptional = userRepository.findUserByUsername(username);
-    if (userOptional.isPresent()) {
-      throw new UserException(UserException.USERNAME_REPEAT);
+    final String username = userDTO.getUsername();
+    if (userRepository.existsByUsername(username)) {
+      throw new UserException(UserException.DUPLICATED_USERNAME);
     }
 
-    final String email = user.getEmail();
-    Optional<User> userOptional1 = userRepository.findByEmail(email);
-    if (userOptional1.isPresent()) {
-      throw new UserException(UserException.EMAIL_REPEAT);
+    final String email = userDTO.getEmail();
+    if (userRepository.existsByEmail(email)) {
+      throw new UserException(UserException.DUPLICATED_EMAIL);
     }
 
-    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-    final String rawPassword = user.getPassword();
-    user.setPassword(encoder.encode(rawPassword));
+    User user = new User();
+
+    user.setPassword(userDTO.getPassword());
+    user.setUsername(userDTO.getUsername());
+    user.setEmail(userDTO.getEmail());
+    user.setSchool(userDTO.getSchool());
 
     List<Authority> authorities = new ArrayList<>();
-    for (Authority authority : user.getAuthorities()) {
+    for (Authority authority : userDTO.getAuthorities()) {
       authorities.add(authorityRepository.findByName(authority.getName()));
     }
-    user.setName(user.getFirstname() + user.getLastname());
+    user.setFirstname(userDTO.getFirstname());
+    userDTO.setLastname(userDTO.getLastname());
+    user.setName(userDTO.getFirstname() + userDTO.getLastname());
     user.setAuthorities(authorities);
     return JwtUserFactory.create(userRepository.save(user));
   }
 
   @Override
-  public JwtUser update(User updateUser) throws UserException {
+  public JwtUser update(UserDTO userDTO) throws UserException {
 
     User user =
         userRepository
-            .findById(updateUser.getId())
+            .findById(userDTO.getId())
             .orElseThrow(() -> new UserException(UserException.NO_SUCH_USER));
-    String username = updateUser.getUsername();
+
+    String username = userDTO.getUsername();
     if (null != username) {
-      Optional<User> exUser = userRepository.findUserByUsername(username);
-      if (exUser.isPresent() && !exUser.get().getId().equals(updateUser.getId())) {
-        throw new UserException(UserException.USERNAME_REPEAT);
+      if (userRepository.existsByUsernameAndIdIsNot(username, userDTO.getId())) {
+        throw new UserException(UserException.DUPLICATED_USERNAME);
       }
       user.setUsername(username);
     }
 
-    String email = updateUser.getEmail();
+    String email = userDTO.getEmail();
     if (null != email) {
-      Optional<User> exUser = userRepository.findByEmail(email);
-      if (exUser.isPresent() && !exUser.get().getEmail().equals(updateUser.getEmail())) {
-        throw new UserException(UserException.EMAIL_REPEAT);
+      if (userRepository.existsByEmailAndIdIsNot(email, userDTO.getId())) {
+        throw new UserException(UserException.DUPLICATED_EMAIL);
       }
       user.setEmail(email);
     }
 
-    if (null != updateUser.getEnabled()) {
-      user.setEnabled(updateUser.getEnabled());
+    if (null != userDTO.getEnabled()) {
+      user.setEnabled(userDTO.getEnabled());
     }
 
-    if (null != updateUser.getName()) {
-      user.setName(updateUser.getName());
-    }
-
-    if (null != updateUser.getAuthorities()) {
-      user.setAuthorities(updateUser.getAuthorities());
-    }
-
-    if (null != updateUser.getPassword()) {
-      BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-      user.setPassword(encoder.encode(updateUser.getPassword()));
+    if (null != userDTO.getPassword()) {
+      user.setPassword(userDTO.getPassword());
       user.setLastPasswordResetDate(new Date());
     }
 
-    if (null != updateUser.getFirstname()) {
-      user.setFirstname(updateUser.getFirstname());
+    if (null != userDTO.getFirstname()) {
+      user.setFirstname(userDTO.getFirstname());
     }
 
-    if (null != updateUser.getLastname()) {
-      user.setLastname(updateUser.getLastname());
+    if (null != userDTO.getLastname()) {
+      user.setLastname(userDTO.getLastname());
     }
 
-    if (null != updateUser.getSchool()) {
-      user.setSchool(updateUser.getSchool());
+    if (null != userDTO.getSchool()) {
+      user.setSchool(userDTO.getSchool());
     }
 
-    if (null != updateUser.getSignature()) {
-      user.setSignature(updateUser.getSignature());
+    if (null != userDTO.getSignature()) {
+      user.setSignature(userDTO.getSignature());
     }
 
-    if (null != updateUser.getAuthorities()) {
+    if (null != userDTO.getAuthorities()) {
       List<Authority> authorities = new ArrayList<>();
-      for (Authority authority : updateUser.getAuthorities()) {
+      for (Authority authority : userDTO.getAuthorities()) {
         authorities.add(authorityRepository.findByName(authority.getName()));
       }
       user.setAuthorities(authorities);
@@ -255,6 +263,9 @@ public class UserServiceImpl implements UserService {
             .findById(groupId)
             .orElseThrow(() -> new GroupException(GroupException.NO_SUCH_GROUP));
 
+    if (group.getUserGenerated()) {
+      throw new GroupException(GroupException.HAS_BEEN_GENERATED);
+    }
     List<User> userList = new ArrayList<>();
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     List<Authority> authorities = new ArrayList<>();
@@ -273,6 +284,7 @@ public class UserServiceImpl implements UserService {
 
     userList = userRepository.saveAll(userList);
     group.setUserSet(new HashSet<>(userList));
+    group.setUserGenerated(true);
     groupRepository.save(group);
 
     List<JwtUser> jwtUserList = JwtUserFactory.createList(userRepository.saveAll(userList));
@@ -286,6 +298,10 @@ public class UserServiceImpl implements UserService {
         groupRepository
             .findById(groupId)
             .orElseThrow(() -> new GroupException(GroupException.NO_SUCH_GROUP));
+
+    if (group.getUserGenerated()) {
+      throw new GroupException(GroupException.HAS_BEEN_GENERATED);
+    }
 
     ExcelUtil.validExcel(excel);
 
@@ -335,6 +351,7 @@ public class UserServiceImpl implements UserService {
 
     userList = userRepository.saveAll(userList);
     group.setUserSet(new HashSet<>(userList));
+    group.setUserGenerated(true);
     groupRepository.save(group);
 
     List<JwtUser> jwtUserList = JwtUserFactory.createList(userRepository.saveAll(userList));

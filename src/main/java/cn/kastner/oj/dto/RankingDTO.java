@@ -7,8 +7,6 @@ import java.util.List;
 @Data
 public class RankingDTO {
 
-  private String id;
-
   private String contestId;
 
   private String contestName;

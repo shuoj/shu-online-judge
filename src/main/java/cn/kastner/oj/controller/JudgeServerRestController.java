@@ -1,6 +1,6 @@
 package cn.kastner.oj.controller;
 
-import cn.kastner.oj.domain.JudgeServerStatus;
+import cn.kastner.oj.domain.pojos.JudgeServerStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;

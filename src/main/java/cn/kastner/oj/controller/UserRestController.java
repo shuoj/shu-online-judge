@@ -1,8 +1,8 @@
 package cn.kastner.oj.controller;
 
-import cn.kastner.oj.domain.User;
 import cn.kastner.oj.dto.ListDTO;
 import cn.kastner.oj.dto.PageDTO;
+import cn.kastner.oj.dto.UserDTO;
 import cn.kastner.oj.dto.UserGenerationParam;
 import cn.kastner.oj.exception.AppException;
 import cn.kastner.oj.exception.UserException;
@@ -47,21 +47,22 @@ public class UserRestController {
 
   @PostMapping
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public JwtUser create(@RequestBody User user) throws UserException {
-    return userService.create(user);
+  public JwtUser create(@RequestBody UserDTO userDTO) throws UserException {
+    return userService.create(userDTO);
   }
 
   @PutMapping(value = "/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public JwtUser update(@RequestBody User user, @PathVariable String id) throws UserException {
-    user.setId(id);
-    return userService.update(user);
+  public JwtUser update(@RequestBody UserDTO userDTO, @PathVariable String id)
+      throws UserException {
+    userDTO.setId(id);
+    return userService.update(userDTO);
   }
 
   @DeleteMapping
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
   public void delete(@RequestBody ListDTO<String> idList) throws UserException {
-//    userService.delete(idList.getList());
+    //    userService.delete(idList.getList());
   }
 
   @PostMapping(value = "/generate")

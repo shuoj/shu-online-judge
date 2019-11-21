@@ -6,8 +6,9 @@ import cn.kastner.oj.domain.security.Authority;
 import cn.kastner.oj.domain.security.AuthorityName;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.AuthLogDTO;
+import cn.kastner.oj.dto.UserDTO;
 import cn.kastner.oj.exception.AuthenticationException;
-import cn.kastner.oj.exception.ValidateException;
+import cn.kastner.oj.exception.UserException;
 import cn.kastner.oj.repository.AuthLogRepository;
 import cn.kastner.oj.repository.AuthorityRepository;
 import cn.kastner.oj.repository.UserRepository;
@@ -25,13 +26,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
@@ -68,41 +67,37 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   }
 
   @Override
-  public User register(User user) throws ValidateException {
-    final String username = user.getUsername();
-    final String email = user.getEmail();
-    final String name = user.getName();
+  public User register(UserDTO userDTO) throws UserException {
+    final String username = userDTO.getUsername();
+    final String email = userDTO.getEmail();
 
-    if (userRepository.findByUsername(username) != null) {
-      throw new ValidateException(ValidateException.DUPLICATED_USERNAME);
+    if (userRepository.existsByUsername(username)) {
+      throw new UserException(UserException.DUPLICATED_USERNAME);
     }
 
-    Optional<User> userOptional = userRepository.findByEmail(user.getEmail());
-    if (userOptional.isPresent()) {
-      throw new ValidateException(ValidateException.DUPLICATED_EMAIL);
+    if (userRepository.existsByEmail(email)) {
+      throw new UserException(UserException.DUPLICATED_EMAIL);
     }
-    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-    final String rawPassword = user.getPassword();
+
     List<Authority> authorities = new ArrayList<>();
     authorities.add(authorityRepository.findByName(AuthorityName.ROLE_USER));
-    user =
+
+    User user =
         new User(
             username,
-            encoder.encode(rawPassword),
+            userDTO.getPassword(),
             email,
-            user.getFirstname(),
-            user.getLastname(),
-            user.getSchool(),
+            userDTO.getFirstname(),
+            userDTO.getLastname(),
+            userDTO.getSchool(),
             authorities);
-    user.setName(name);
     return userRepository.save(user);
   }
 
   @Override
   public User forgotPassword(String rawPassword) {
-    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     User user = UserContext.getCurrentUser();
-    user.setPassword(encoder.encode(rawPassword));
+    user.setPassword(rawPassword);
     user.setLastPasswordResetDate(new Date());
     return userRepository.save(user);
   }
