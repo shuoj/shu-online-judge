@@ -8,12 +8,16 @@ import cn.kastner.oj.exception.ValidateException;
 import cn.kastner.oj.query.GroupQuery;
 import cn.kastner.oj.security.JwtUser;
 import cn.kastner.oj.service.GroupService;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 @RestController
@@ -104,5 +108,20 @@ public class GroupRestController {
       throw new ValidateException(bindingResult.getFieldError().getDefaultMessage());
     }
     return groupService.deleteMembers(id, usersId);
+  }
+
+  @PostMapping(value = "/{id}/members/resetPassword")
+  @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
+  public void resetMemberPassword(@PathVariable String id, HttpServletResponse response) throws GroupException {
+    response.setHeader("content-type", "application/octet-stream");
+    response.setContentType("application/octet-stream");
+    response.setHeader("Content-Disposition", "attachment");
+
+    Workbook workbook = groupService.resetMembersPassword(id);
+    try (OutputStream os = response.getOutputStream()) {
+      workbook.write(os);
+    } catch (IOException e) {
+      throw new GroupException(GroupException.RESET_ERROR);
+    }
   }
 }

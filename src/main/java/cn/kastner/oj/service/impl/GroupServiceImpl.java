@@ -19,6 +19,10 @@ import cn.kastner.oj.security.JwtUserFactory;
 import cn.kastner.oj.service.GroupService;
 import cn.kastner.oj.util.CommonUtil;
 import cn.kastner.oj.util.DTOMapper;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -233,6 +237,33 @@ public class GroupServiceImpl implements GroupService {
     group.setUserSet(userSet);
     groupRepository.save(group);
     return JwtUserFactory.createList(userSet);
+  }
+
+  @Override
+  public Workbook resetMembersPassword(String id) throws GroupException {
+    Group group =
+        groupRepository
+            .findById(id)
+            .orElseThrow(() -> new GroupException(GroupException.NO_SUCH_GROUP));
+    Set<User> userSet = group.getUserSet();
+    XSSFWorkbook workbook = new XSSFWorkbook();
+    XSSFSheet sheet = workbook.createSheet("用户密码");
+    int rowNum = 0;
+    Row header = sheet.createRow(rowNum++);
+    header.createCell(0).setCellValue("Username");
+    header.createCell(1).setCellValue("学号");
+    header.createCell(2).setCellValue("姓名");
+    header.createCell(3).setCellValue("密码");
+    for (User user : userSet) {
+      String randomPassword = CommonUtil.generateStr(8);
+      user.setPassword(randomPassword);
+      Row row = sheet.createRow(rowNum++);
+      row.createCell(0).setCellValue(user.getUsername());
+      row.createCell(1).setCellValue(user.getStudentNumber());
+      row.createCell(2).setCellValue(user.getName());
+      row.createCell(3).setCellValue(randomPassword);
+    }
+    return workbook;
   }
 
   private void authorize(Group group) throws AuthorizationException {

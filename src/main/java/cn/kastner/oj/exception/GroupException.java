@@ -7,6 +7,7 @@ public class GroupException extends AppException {
   public static final String NO_SUCH_GROUP = "没有该群组";
   public static final String HAVE_SUCH_GROUP = "该群组名已存在";
   public static final String HAS_BEEN_GENERATED = "已经批量生成过了";
+  public static final String RESET_ERROR = "重置失败";
 
   public GroupException(String message) {
     super(message);
@@ -22,6 +23,10 @@ public class GroupException extends AppException {
       case HAS_BEEN_GENERATED:
         this.code = -4;
         this.status = HttpStatus.BAD_REQUEST;
+        break;
+      case RESET_ERROR:
+        this.code = -5;
+        this.status = HttpStatus.INTERNAL_SERVER_ERROR;
         break;
       default:
         this.code = -1;
