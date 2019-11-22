@@ -111,4 +111,11 @@ public class Contest {
     return LocalDateTime.now().isAfter(this.startDate.plusHours(4));
   }
 
+  public boolean isICPC() {
+    return ContestType.ICPC.equals(contestType);
+  }
+
+  public boolean isOI() {
+    return ContestType.OI.equals(contestType);
+  }
 }

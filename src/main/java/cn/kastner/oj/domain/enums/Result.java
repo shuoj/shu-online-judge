@@ -10,5 +10,13 @@ public enum Result {
   WRONG_ANSWER,
   SYSTEM_ERROR,
   WAITING,
-  JUDGE_CLIENT_ERROR
+  JUDGE_CLIENT_ERROR;
+
+  public static boolean isUserError(Result result) {
+    return RUNTIME_ERROR.equals(result) ||
+        CPU_TIME_LIMIT_EXCEEDED.equals(result) ||
+        TIME_LIMIT_EXCEEDED.equals(result) ||
+        MEMORY_LIMIT_EXCEEDED.equals(result) ||
+        WRONG_ANSWER.equals(result);
+  }
 }

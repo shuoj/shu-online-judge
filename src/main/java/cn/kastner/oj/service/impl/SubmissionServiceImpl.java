@@ -3,7 +3,10 @@ package cn.kastner.oj.service.impl;
 import cn.kastner.oj.constant.CommonConstant;
 import cn.kastner.oj.constant.LanguageConfig;
 import cn.kastner.oj.domain.*;
-import cn.kastner.oj.domain.enums.*;
+import cn.kastner.oj.domain.enums.ContestStatus;
+import cn.kastner.oj.domain.enums.Language;
+import cn.kastner.oj.domain.enums.OpenType;
+import cn.kastner.oj.domain.enums.Result;
 import cn.kastner.oj.domain.pojos.JudgeResponse;
 import cn.kastner.oj.domain.pojos.JudgeResult;
 import cn.kastner.oj.domain.security.UserContext;
@@ -177,8 +180,9 @@ public class SubmissionServiceImpl implements SubmissionService {
         contestRepository
             .findById(submissionDTO.getContestId())
             .orElseThrow(() -> new ContestException(ContestException.NO_SUCH_CONTEST));
-    boolean isICPC = contest.getContestType().equals(ContestType.ICPC);
-    Optional<RankingUser> rankingUserOptional = rankingUserRepository.findByContestAndUser(contest, user);
+    boolean isICPC = contest.isICPC();
+    Optional<RankingUser> rankingUserOptional =
+        rankingUserRepository.findByContestAndUser(contest, user);
     if (!user.isAdmin()) {
       requireContestUser(contest, rankingUserOptional);
       requireContestOnGoing(contest);
@@ -247,11 +251,9 @@ public class SubmissionServiceImpl implements SubmissionService {
           if (!timeCost.getPassed()) {
             timeCost.setPassed(true);
           }
-        } else {
-          if (!timeCost.getPassed()) {
-            timeCost.increaseErrorCount();
-            rankingUser.addTime(Duration.ofMinutes(30).toMillis());
-          }
+        } else if (Result.isUserError(submission.getResult()) && !timeCost.getPassed()) {
+          timeCost.increaseErrorCount();
+          rankingUser.addTime(Duration.ofMinutes(30).toMillis());
         }
 
         contestProblem.computeAcceptRate();
@@ -263,7 +265,6 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     return mapper.entityToDTO(submission);
   }
-
 
   @Override
   public SubmissionDTO createPracticeSubmission(SubmissionDTO submissionDTO)
@@ -291,7 +292,7 @@ public class SubmissionServiceImpl implements SubmissionService {
   }
 
   @Override
-  public SubmissionDTO rejudgeSubmission(String id) throws SubmissionException {
+  public SubmissionDTO rejudgeSubmission(String id, Result result) throws SubmissionException {
     User user = UserContext.getCurrentUser();
     Submission submission =
         submissionRepository
@@ -303,24 +304,84 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
     Problem problem = submission.getProblem();
     Contest contest = submission.getContest();
-    ContestProblem contestProblem =
-        contestProblemRepository.findByContestAndProblem(contest, problem);
 
-    JudgeResult judgeResult = judge(submission, problem);
+    JudgeResult judgeResult;
+    if (null == result) {
+      judgeResult = judge(submission, problem);
+    } else {
+      judgeResult = new JudgeResult();
+      judgeResult.setResult(result);
+      judgeResult.setRealTime(0);
+    }
+
+    Optional<RankingUser> rankingUserOptional =
+        rankingUserRepository.findByContestAndUser(contest, user);
+    rankingUserOptional.ifPresent(
+        rankingUser -> correctRanking(contest, rankingUser, submission, judgeResult));
 
     submission.setDuration(judgeResult.getRealTime());
     submission.setResult(judgeResult.getResult());
-    submission.setResultDetail(JSON.toJSONString(judgeResult));
+    submission.setResultDetail(result == null ? JSON.toJSONString(judgeResult) : null);
     submission.setMemory(judgeResult.getMemory());
+    return mapper.entityToDTO(submissionRepository.save(submission));
+  }
+
+  /**
+   * 订正比赛题目通过率、用户的通过率、罚时、得分、一血情况
+   */
+  private void correctRanking(
+      Contest contest, RankingUser rankingUser, Submission submission, JudgeResult newResult) {
+    ContestProblem contestProblem =
+        contestProblemRepository.findByContestAndProblem(contest, submission.getProblem());
     if (contestProblem.getFirstSubmission() == null) {
       contestProblem.setFirstSubmission(submission);
     } else {
       Submission firstSubmission = contestProblem.getFirstSubmission();
       if (!firstSubmission.getCreateDate().isBefore(submission.getCreateDate())) {
         contestProblem.setFirstSubmission(submission);
+        RankingUser firstSubmissionRankingUser =
+            rankingUserRepository.findByContestAndUser(contest, firstSubmission.getAuthor()).get();
+        TimeCost timeCost =
+            timeCostRepository.findByRankingUserAndContestProblem(
+                firstSubmissionRankingUser, contestProblem);
+        timeCost.setFirstPassed(false);
+        timeCostRepository.save(timeCost);
       }
     }
-    return mapper.entityToDTO(submissionRepository.save(submission));
+
+    TimeCost timeCost =
+        timeCostRepository.findByRankingUserAndContestProblem(rankingUser, contestProblem);
+    if (Result.isUserError(submission.getResult())
+        && newResult.getResult().equals(Result.ACCEPTED)) {
+
+      timeCost.decreaseErrorCount();
+      rankingUser.minusTime(
+          Duration.ofMinutes(30).toMillis() + submission.getDuration() - newResult.getRealTime());
+      rankingUser.increaseAcceptCount();
+      contestProblem.increaseAcceptCount();
+      contestProblem.computeAcceptRate();
+
+      if (contest.isOI()) {
+        rankingUser.addScore(contestProblem.getScore() - timeCost.getScore());
+        timeCost.setScore((double) contestProblem.getScore());
+      }
+    } else if (Result.ACCEPTED.equals(submission.getResult())
+        && Result.isUserError(newResult.getResult())) {
+      timeCost.increaseErrorCount();
+      rankingUser.addTime(
+          Duration.ofMinutes(30).toMillis() + newResult.getRealTime() - submission.getDuration());
+      rankingUser.decreaseAcceptCount();
+      contestProblem.decreaseAcceptCount();
+      contestProblem.computeAcceptRate();
+
+      if (contest.isOI()) {
+        rankingUser.minusScore(timeCost.getScore());
+        timeCost.setScore(0D);
+      }
+    }
+    timeCostRepository.save(timeCost);
+    contestProblemRepository.save(contestProblem);
+    rankingUserRepository.save(rankingUser);
   }
 
   @Override
@@ -559,7 +620,8 @@ public class SubmissionServiceImpl implements SubmissionService {
     return result;
   }
 
-  private void requireContestUser(Contest contest, Optional<RankingUser> rankingUserOptional) throws ContestException {
+  private void requireContestUser(Contest contest, Optional<RankingUser> rankingUserOptional)
+      throws ContestException {
     if (!rankingUserOptional.isPresent()) {
       OpenType type = contest.getOpenType();
       switch (type) {

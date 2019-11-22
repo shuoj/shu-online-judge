@@ -84,6 +84,10 @@ public class ContestProblem {
     this.acceptCount++;
   }
 
+  public void decreaseAcceptCount() {
+    this.acceptCount--;
+  }
+
   public void increaseSubmitCount() {
     this.submitCount++;
   }

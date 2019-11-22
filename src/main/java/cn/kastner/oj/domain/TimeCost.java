@@ -48,8 +48,16 @@ public class TimeCost {
     this.totalTime += milliseconds;
   }
 
+  public void minusTotalTime(Long milliseconds) {
+    this.totalTime -= milliseconds;
+  }
+
   public void increaseErrorCount() {
     this.errorCount++;
+  }
+
+  public void decreaseErrorCount() {
+    this.errorCount--;
   }
 
   public void addScore(Double score) {

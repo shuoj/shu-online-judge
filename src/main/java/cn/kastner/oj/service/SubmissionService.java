@@ -1,5 +1,6 @@
 package cn.kastner.oj.service;
 
+import cn.kastner.oj.domain.enums.Result;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.SubmissionDTO;
 import cn.kastner.oj.exception.ContestException;
@@ -29,7 +30,7 @@ public interface SubmissionService {
   SubmissionDTO createPracticeSubmission(SubmissionDTO submissionDTO)
       throws ProblemException, SubmissionException;
 
-  SubmissionDTO rejudgeSubmission(String id) throws SubmissionException;
+  SubmissionDTO rejudgeSubmission(String id, Result result) throws SubmissionException;
 
   PageDTO<SubmissionDTO> findAll(Integer page, Integer size, SubmissionQuery submissionQuery)
       throws ProblemException, UserException;

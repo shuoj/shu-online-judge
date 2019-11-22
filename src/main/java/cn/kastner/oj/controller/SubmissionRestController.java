@@ -1,5 +1,6 @@
 package cn.kastner.oj.controller;
 
+import cn.kastner.oj.domain.enums.Result;
 import cn.kastner.oj.dto.PageDTO;
 import cn.kastner.oj.dto.SubmissionDTO;
 import cn.kastner.oj.exception.AppException;
@@ -92,7 +93,8 @@ public class SubmissionRestController {
 
   @PutMapping(value = "/submissions/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'STUFF')")
-  public SubmissionDTO rejudgeSubmissions(@PathVariable String id) throws AppException {
-    return submissionService.rejudgeSubmission(id);
+  public SubmissionDTO rejudgeSubmissions(@PathVariable String id, @RequestParam(required = false) Result result) throws AppException {
+    return submissionService.rejudgeSubmission(id, result);
   }
+
 }

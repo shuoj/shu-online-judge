@@ -64,6 +64,14 @@ public class RankingUser {
     this.acceptCount++;
   }
 
+  public void decreaseAcceptCount() {
+    this.acceptCount--;
+  }
+
+  public void decreaseSubmitCount() {
+    this.submitCount--;
+  }
+
   public void increaseSubmitCount() {
     this.submitCount++;
   }
@@ -76,7 +84,17 @@ public class RankingUser {
     this.time += milliseconds;
   }
 
+  public void minusTime(Long milliseconds) {
+    this.time -= milliseconds;
+  }
+
+
   public void addScore(Double score) {
     this.score += score;
   }
+
+  public void minusScore(Double score) {
+    this.score -= score;
+  }
 }
+
