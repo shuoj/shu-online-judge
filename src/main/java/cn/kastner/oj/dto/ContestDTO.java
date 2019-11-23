@@ -53,5 +53,5 @@ public class ContestDTO {
 
   private Boolean visible;
 
-  private Boolean couldShare;
+  private Boolean sharable;
 }

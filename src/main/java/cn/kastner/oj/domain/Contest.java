@@ -100,7 +100,7 @@ public class Contest {
   @Enumerated(EnumType.STRING)
   private ContestStatus status = ContestStatus.NOT_STARTED;
 
-  private Boolean couldShare = true;
+  private Boolean sharable = true;
 
   public void setPassword(String password) {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();

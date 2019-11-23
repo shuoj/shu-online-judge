@@ -198,8 +198,8 @@ public class ContestServiceImpl implements ContestService {
       }
     }
 
-    if (null != contestDTO.getCouldShare()) {
-      contest.setCouldShare(contestDTO.getCouldShare());
+    if (null != contestDTO.getSharable()) {
+      contest.setSharable(contestDTO.getSharable());
     }
 
     if (null != contestDTO.getEndDate()) {

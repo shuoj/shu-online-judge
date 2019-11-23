@@ -1,6 +1,9 @@
 package cn.kastner.oj.aspect;
 
-import cn.kastner.oj.domain.*;
+import cn.kastner.oj.domain.Contest;
+import cn.kastner.oj.domain.Problem;
+import cn.kastner.oj.domain.Submission;
+import cn.kastner.oj.domain.User;
 import cn.kastner.oj.domain.enums.Result;
 import cn.kastner.oj.domain.security.UserContext;
 import cn.kastner.oj.dto.SubmissionDTO;
@@ -38,7 +41,7 @@ public class SubmissionAspect {
           "execution(* cn.kastner.oj.service.SubmissionService.findByContestProblem(..)) && args(contest, problem)",
       argNames = "contest,problem")
   private void requirePassProblem(Contest contest, Problem problem) throws AppException {
-    if (!contest.getCouldShare()) {
+    if (!contest.getSharable()) {
       throw new ContestException(ContestException.CANNOT_SHARING);
     }
 
