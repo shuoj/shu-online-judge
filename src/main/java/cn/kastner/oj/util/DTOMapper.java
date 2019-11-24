@@ -32,11 +32,13 @@ public interface DTOMapper {
   default void beforeMappingSubmission(@MappingTarget SubmissionDTO target, Submission source) {
     User user = UserContext.getCurrentUser();
     Contest contest = source.getContest();
-    if (contest.getContestType().equals(ContestType.OI) && !contest.getStatus().equals(ContestStatus.ENDED) && !user.isAdminOrStuff()) {
-      target.setResult(null);
-      target.setDuration(null);
-      target.setMemory(null);
-      target.setResultDetail(null);
+    if (null != contest) {
+      if (contest.getContestType().equals(ContestType.OI) && !contest.getStatus().equals(ContestStatus.ENDED) && !user.isAdminOrStuff()) {
+        target.setResult(null);
+        target.setDuration(null);
+        target.setMemory(null);
+        target.setResultDetail(null);
+      }
     }
   }
 
