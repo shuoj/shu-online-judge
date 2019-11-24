@@ -256,13 +256,14 @@ public class GroupServiceImpl implements GroupService {
     header.createCell(3).setCellValue("密码");
     for (User user : userSet) {
       String randomPassword = CommonUtil.generateStr(8);
-      user.setPassword(randomPassword);
+      user.setMd5Password(randomPassword);
       Row row = sheet.createRow(rowNum++);
       row.createCell(0).setCellValue(user.getUsername());
       row.createCell(1).setCellValue(user.getStudentNumber());
       row.createCell(2).setCellValue(user.getName());
       row.createCell(3).setCellValue(randomPassword);
     }
+    userRepository.saveAll(userSet);
     return workbook;
   }
 

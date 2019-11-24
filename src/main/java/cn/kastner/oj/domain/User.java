@@ -4,6 +4,7 @@ import cn.kastner.oj.domain.log.AuthLog;
 import cn.kastner.oj.domain.security.Authority;
 import cn.kastner.oj.domain.security.AuthorityName;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.hash.Hashing;
 import lombok.Data;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -163,28 +164,15 @@ public class User {
       String lastname,
       String school,
       List<Authority> authorities) {
-    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     this.username = username;
-    this.password = encoder.encode(password);
     this.email = email;
     this.firstname = firstname;
     this.lastname = lastname;
     this.name = lastname + firstname;
     this.school = school;
     this.authorities = authorities;
-  }
 
-  public User(
-      @NotNull @Size(min = 4, max = 50) String username,
-      @NotNull String password,
-      @NotNull String email,
-      String school,
-      List<Authority> authorities) {
-    this.username = username;
-    this.password = password;
-    this.email = email;
-    this.school = school;
-    this.authorities = authorities;
+    this.setPassword(password);
   }
 
   public User(
@@ -197,7 +185,6 @@ public class User {
       String school,
       List<Authority> authorities) {
     this.username = username;
-    this.password = password;
     this.firstname = firstname;
     this.lastname = lastname;
     this.name = lastname + firstname;
@@ -205,6 +192,8 @@ public class User {
     this.email = email;
     this.school = school;
     this.authorities = authorities;
+
+    this.setMd5Password(password);
   }
 
   public User() {
@@ -253,5 +242,11 @@ public class User {
   public void setPassword(String password) {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     this.password = encoder.encode(password);
+  }
+
+  public void setMd5Password(String password) {
+    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    String md5Password = Hashing.md5().hashBytes(password.getBytes()).toString();
+    this.password = encoder.encode(md5Password);
   }
 }

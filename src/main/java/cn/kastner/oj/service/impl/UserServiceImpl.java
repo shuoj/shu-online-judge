@@ -273,11 +273,10 @@ public class UserServiceImpl implements UserService {
 
     for (int i = 0; i < quantity; i++) {
       String username = "g" + generateNum(group.getIdx().intValue()) + "#" + generateNum(i);
-      String password = encoder.encode(username);
       String firstname = "临时";
       String lastname = "用户";
       String email = username + "@temp.com";
-      User user = new User(username, password, firstname, lastname, "", email, "临时大学", authorities);
+      User user = new User(username, username, firstname, lastname, "", email, "临时大学", authorities);
       user.setTemporary(true);
       userList.add(user);
     }
@@ -335,7 +334,7 @@ public class UserServiceImpl implements UserService {
         }
 
         String username = "g" + generateNum(group.getIdx().intValue()) + "#" + row.getCell(0).getStringCellValue();
-        String password = encoder.encode(row.getCell(2).getStringCellValue());
+        String password = row.getCell(2).getStringCellValue();
         String studentNumber = row.getCell(0).getStringCellValue();
         String firstname = row.getCell(1).getStringCellValue();
         String email = username + "@acmoj.shu.edu.cn";
